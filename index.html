@@ -108,7 +108,7 @@
       <div class="legend-item"><div class="legend-dot" style="background:#6b7280"></div>DB / Session</div>
       <div class="legend-item"><div class="legend-dot" style="background:#f43f5e"></div>Guard / error</div>
     </div>
-    <button class="btn-replay" onclick="replaySeq()">↺ replay</button>
+    <button class="btn-replay" onclick="replaySeq()">replay</button>
     <div style="clear:both"></div>
     <div class="diagram-wrap"><div id="seqWrap"></div></div>
   </div>
@@ -122,7 +122,7 @@
       <div class="legend-item"><div class="legend-dot" style="background:#a855f7"></div>Post-search</div>
       <div class="legend-item"><div class="legend-dot" style="background:#f43f5e"></div>Error / reset</div>
     </div>
-    <button class="btn-replay" onclick="replaySM()">↺ animate</button>
+    <button class="btn-replay" onclick="replaySM()">animate</button>
     <div style="clear:both"></div>
     <div class="diagram-wrap"><div id="smWrap"></div></div>
   </div>
@@ -268,17 +268,180 @@ def pipeline_session(db):
       <div class="legend-item"><div class="legend-dot" style="background:#f43f5e"></div>Invalid / wrong answer</div>
       <div class="legend-item"><div class="legend-dot" style="background:#f59e0b"></div>Cross-phase (bank + redirect)</div>
       <div class="legend-item"><div class="legend-dot" style="background:#6b7280"></div>Skip / use default</div>
+      <div class="legend-item" style="margin-left:auto"><div class="legend-dot" style="background:#22d3a0;border-radius:2px"></div><span style="color:#22d3a0;font-weight:600">LIVE</span>&nbsp;chat/pipeline/input_guard.py</div>
     </div>
+
+    <!-- Module overview -->
+    <div class="rec-section-title">module overview</div>
+    <div class="rec-grid" style="margin-bottom:2rem">
+
+      <div class="rec-card good">
+        <span class="rec-tag good">enum</span>
+        <div class="rec-title">InputClass — 10 types</div>
+        <div class="rec-body">Every incoming message is classified into one of these before any phase logic runs.</div>
+        <div class="rec-code">class InputClass(str, Enum):
+    CITY    = "city"
+    GOAL    = "goal"
+    TYPE    = "type"
+    PERSONA = "persona"
+    NAME    = "name"
+    PHONE   = "phone"
+    BUDGET  = "budget"
+    ROOMS   = "rooms"
+    SKIP    = "skip"
+    UNKNOWN = "unknown"</div>
+      </div>
+
+      <div class="rec-card good">
+        <span class="rec-tag good">function</span>
+        <div class="rec-title">classify(text) — priority order</div>
+        <div class="rec-body">Checks in this exact order so more-specific patterns win over generic ones (e.g. budget before city).</div>
+        <div class="rec-code">def classify(text: str) -> InputClass:
+    if SKIP_WORDS:      return SKIP
+    if PHONE_RE:        return PHONE
+    if BUDGET_RE:       return BUDGET   # before city!
+    if ROOMS_RE:        return ROOMS
+    if extract_city():  return CITY
+    if extract_goal():  return GOAL
+    if extract_type():  return TYPE
+    if PERSONA_RE:      return PERSONA
+    if NAME_RE (2-40 chars, letters only):
+                        return NAME
+    return UNKNOWN</div>
+      </div>
+
+      <div class="rec-card good">
+        <span class="rec-tag good">function</span>
+        <div class="rec-title">check_phase_input(session, expected, text, …)</div>
+        <div class="rec-body">Main guard. Returns <code>None</code> when input is acceptable, or a <code>PhaseResult</code> with a context-aware hint when cross-phase.</div>
+        <div class="rec-code">cls = classify(user_text)
+if cls.value == expected:          # correct
+    _reset_retries(session, qid)
+    return None
+if retries >= MAX_RETRIES(2):      # give up
+    return None
+hint, field, value = _build_hint(cls, text, expected)
+if field: bank_answer(session, field, value)
+_increment_retries(session, qid)
+return PhaseResult(
+    content=f"{hint}\n\n{re_ask_text}",
+    suggestions=re_ask_suggestions,
+)</div>
+      </div>
+
+      <div class="rec-card good">
+        <span class="rec-tag good">function</span>
+        <div class="rec-title">bank_answer / pop_banked</div>
+        <div class="rec-body">Store cross-phase answers in <code>session.extra['banked']</code> (JSONField). Each phase handler calls <code>pop_banked()</code> first to skip a question the user already answered.</div>
+        <div class="rec-code">def bank_answer(session, field, value):
+    session.extra.setdefault('banked',{})[field]=value
+    session.save(update_fields=['extra','updated_at'])
+
+def pop_banked(session, field):
+    value = session.extra.get('banked',{}).pop(field,None)
+    if value: session.save(...)
+    return value
+
+# Usage in phase2 Q2.1:
+banked_city = pop_banked(session, 'city')
+if banked_city:
+    session.p2_city = banked_city  # skip asking!</div>
+      </div>
+
+    </div>
+
+    <div class="rec-section-title">integration points</div>
+    <div class="rec-grid" style="margin-bottom:2rem">
+      <div class="rec-card good">
+        <span class="rec-tag good">phase 1b</span>
+        <div class="rec-title">Q1.1B — Name capture (phase1.py)</div>
+        <div class="rec-code">guard = check_phase_input(
+    session, "name", user_text,
+    Q1_1B_TEXT, Q1_1B_SUGGESTIONS,
+    question_id="1.1B",
+)
+if guard is not None:
+    return guard  # e.g. user typed city → hint + re-ask</div>
+      </div>
+      <div class="rec-card good">
+        <span class="rec-tag good">phase 2.1</span>
+        <div class="rec-title">Q2.1 — City input (phase2.py)</div>
+        <div class="rec-code">banked_city = pop_banked(session, 'city')
+if banked_city:
+    session.p2_city = banked_city  # already banked
+else:
+    guard = check_phase_input(
+        session, "city", user_text,
+        Q2_1_TEXT, Q2_1_SUGGESTIONS,
+        question_id="2.1",
+    )
+    if guard is not None: return guard</div>
+      </div>
+      <div class="rec-card good">
+        <span class="rec-tag good">phase 2.2</span>
+        <div class="rec-title">Q2.2 — Goal (phase2.py)</div>
+        <div class="rec-code">banked_goal = pop_banked(session, 'goal')
+if banked_goal:
+    session.p2_goal = banked_goal
+else:
+    guard = check_phase_input(
+        session, "goal", user_text,
+        Q2_2_TEXT, Q2_2_SUGGESTIONS,
+        question_id="2.2",
+    )
+    if guard is not None: return guard</div>
+      </div>
+      <div class="rec-card good">
+        <span class="rec-tag good">phase 2.3</span>
+        <div class="rec-title">Q2.3 — Property type (phase2.py)</div>
+        <div class="rec-code">banked_type = pop_banked(session, 'prop_type')
+if banked_type:
+    session.p2_property_type = banked_type
+else:
+    guard = check_phase_input(
+        session, "type", user_text,
+        Q2_3_TEXT, Q2_3_SUGGESTIONS,
+        question_id="2.3",
+    )
+    if guard is not None: return guard</div>
+      </div>
+    </div>
+
+    <div class="rec-section-title">hint messages generated by _build_hint()</div>
+    <div style="overflow-x:auto;margin-bottom:2rem">
+      <table style="width:100%;border-collapse:collapse;font-family:var(--font-mono);font-size:0.72rem">
+        <thead><tr style="border-bottom:1px solid var(--border)">
+          <th style="text-align:left;padding:0.5rem 0.75rem;color:var(--muted)">Expected</th>
+          <th style="text-align:left;padding:0.5rem 0.75rem;color:var(--muted)">User gave</th>
+          <th style="text-align:left;padding:0.5rem 0.75rem;color:var(--muted)">Hint sent</th>
+          <th style="text-align:left;padding:0.5rem 0.75rem;color:var(--muted)">Banked as</th>
+        </tr></thead>
+        <tbody>
+          <tr style="border-bottom:1px solid var(--border)"><td style="padding:0.45rem 0.75rem;color:var(--accent)">name</td><td style="padding:0.45rem 0.75rem;color:var(--amber)">CITY</td><td style="padding:0.45rem 0.75rem;color:var(--text)">&quot;شكراً! سنبحث في {city}.&quot;</td><td style="padding:0.45rem 0.75rem;color:var(--green)">city</td></tr>
+          <tr style="border-bottom:1px solid var(--border)"><td style="padding:0.45rem 0.75rem;color:var(--accent)">name</td><td style="padding:0.45rem 0.75rem;color:var(--amber)">GOAL</td><td style="padding:0.45rem 0.75rem;color:var(--text)">&quot;سنأخذ بعين الاعتبار هدفك ({goal_ar}).&quot;</td><td style="padding:0.45rem 0.75rem;color:var(--green)">goal</td></tr>
+          <tr style="border-bottom:1px solid var(--border)"><td style="padding:0.45rem 0.75rem;color:var(--accent)">name</td><td style="padding:0.45rem 0.75rem;color:var(--amber)">PHONE</td><td style="padding:0.45rem 0.75rem;color:var(--text)">&quot;حفظنا رقمك.&quot;</td><td style="padding:0.45rem 0.75rem;color:var(--green)">phone</td></tr>
+          <tr style="border-bottom:1px solid var(--border)"><td style="padding:0.45rem 0.75rem;color:var(--accent)">city</td><td style="padding:0.45rem 0.75rem;color:var(--amber)">NAME</td><td style="padding:0.45rem 0.75rem;color:var(--text)">&quot;أهلاً {name}!&quot;</td><td style="padding:0.45rem 0.75rem;color:var(--green)">name</td></tr>
+          <tr style="border-bottom:1px solid var(--border)"><td style="padding:0.45rem 0.75rem;color:var(--accent)">city</td><td style="padding:0.45rem 0.75rem;color:var(--amber)">GOAL</td><td style="padding:0.45rem 0.75rem;color:var(--text)">&quot;ممتاز، هدفك {goal_ar}!&quot;</td><td style="padding:0.45rem 0.75rem;color:var(--green)">goal</td></tr>
+          <tr style="border-bottom:1px solid var(--border)"><td style="padding:0.45rem 0.75rem;color:var(--accent)">city</td><td style="padding:0.45rem 0.75rem;color:var(--amber)">TYPE</td><td style="padding:0.45rem 0.75rem;color:var(--text)">&quot;ممتاز، تبحث عن {type}!&quot;</td><td style="padding:0.45rem 0.75rem;color:var(--green)">prop_type</td></tr>
+          <tr style="border-bottom:1px solid var(--border)"><td style="padding:0.45rem 0.75rem;color:var(--accent)">city</td><td style="padding:0.45rem 0.75rem;color:var(--amber)">BUDGET</td><td style="padding:0.45rem 0.75rem;color:var(--text)">&quot;سنأخذ ميزانيتك بعين الاعتبار.&quot;</td><td style="padding:0.45rem 0.75rem;color:var(--green)">budget_raw</td></tr>
+          <tr style="border-bottom:1px solid var(--border)"><td style="padding:0.45rem 0.75rem;color:var(--accent)">goal</td><td style="padding:0.45rem 0.75rem;color:var(--amber)">CITY</td><td style="padding:0.45rem 0.75rem;color:var(--text)">&quot;نعم، {city}.&quot;</td><td style="padding:0.45rem 0.75rem;color:var(--green)">city</td></tr>
+          <tr style="border-bottom:1px solid var(--border)"><td style="padding:0.45rem 0.75rem;color:var(--accent)">goal</td><td style="padding:0.45rem 0.75rem;color:var(--amber)">TYPE</td><td style="padding:0.45rem 0.75rem;color:var(--text)">&quot;تبحث عن {type}.&quot;</td><td style="padding:0.45rem 0.75rem;color:var(--green)">prop_type</td></tr>
+          <tr><td style="padding:0.45rem 0.75rem;color:var(--accent)">type</td><td style="padding:0.45rem 0.75rem;color:var(--amber)">CITY</td><td style="padding:0.45rem 0.75rem;color:var(--text)">&quot;تبحث في {city}.&quot;</td><td style="padding:0.45rem 0.75rem;color:var(--green)">city</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="rec-section-title">per-phase validation cards</div>
     <div class="guard-grid">
 
       <div class="guard-card">
         <div class="guard-phase">Phase 1 · Persona detection</div>
         <div class="guard-q">سؤال: ما هو هدفك؟</div>
         <div class="guard-cols">
-          <div class="guard-col ok"><div class="guard-col-hd">✓ Expected</div>مشتري · مستثمر · وكيل<br>buyer · investor · agent<br><em style="color:#6b7280">+ fuzzy: "ابي اشتري"</em></div>
-          <div class="guard-col err"><div class="guard-col-hd">✗ Common errors</div>"الرياض" → gave city<br>"شقة" → gave property type<br>"أحمد" → gave his name<br>"كم السعر" → off-topic</div>
+          <div class="guard-col ok"><div class="guard-col-hd">Expected</div>مشتري · مستثمر · وكيل<br>buyer · investor · agent<br><em style="color:#6b7280">+ fuzzy: "ابي اشتري"</em></div>
+          <div class="guard-col err"><div class="guard-col-hd">Common errors</div>"الرياض" → gave city<br>"شقة" → gave property type<br>"أحمد" → gave his name<br>"كم السعر" → off-topic</div>
         </div>
-        <div class="guard-action">⚡ Cross-phase: bank leaked city/type into session, still ask persona. Max 2 retries → default "مشتري".</div>
+        <div class="guard-action">Cross-phase: bank leaked city/type into session, still ask persona. Max 2 retries → default "مشتري".</div>
         <div class="guard-code">cls = classify(text)
 if cls == 'city':   session.city = text; re_ask_persona()
 elif cls == 'type': session.prop_type = text; re_ask_persona()
@@ -289,10 +452,10 @@ elif text not in PERSONA_KW: retry(n=2, default='buyer')</div>
         <div class="guard-phase">Phase 1b · Name capture</div>
         <div class="guard-q">سؤال: ما اسمك؟</div>
         <div class="guard-cols">
-          <div class="guard-col ok"><div class="guard-col-hd">✓ Expected</div>Arabic/English name ≥ 2 chars<br>No digits · not a keyword<br><em style="color:#6b7280">e.g. "أحمد"، "Sara"</em></div>
-          <div class="guard-col err"><div class="guard-col-hd">✗ Common errors</div>"0512345678" → gave phone<br>"مليون" → budget leaked<br>"شراء" → goal leaked<br>"؟" or 1 char → too short</div>
+          <div class="guard-col ok"><div class="guard-col-hd">Expected</div>Arabic/English name ≥ 2 chars<br>No digits · not a keyword<br><em style="color:#6b7280">e.g. "أحمد"، "Sara"</em></div>
+          <div class="guard-col err"><div class="guard-col-hd">Common errors</div>"0512345678" → gave phone<br>"مليون" → budget leaked<br>"شراء" → goal leaked<br>"؟" or 1 char → too short</div>
         </div>
-        <div class="guard-action">⚡ Max 2 retries → default "مستخدم". Looks like phone number → bank silently as buyer_phone.</div>
+        <div class="guard-action">Max 2 retries → default "مستخدم". Looks like phone number → bank silently as buyer_phone.</div>
         <div class="guard-code">if re.match(r'^\d{9,}$', text):  session.phone = text; ask_name()
 elif len(text.strip()) < 2:    retry()
 elif text in ALL_KEYWORDS:     retry(hint="اسمك الكريم فقط")
@@ -303,10 +466,10 @@ else: session.name = text.strip()</div>
         <div class="guard-phase">Phase 2a · City input</div>
         <div class="guard-q">سؤال: في أي مدينة تبحث؟</div>
         <div class="guard-cols">
-          <div class="guard-col ok"><div class="guard-col-hd">✓ Expected</div>City in KNOWN_CITIES set<br>"الرياض"، "جدة"، "مكة"<br><em style="color:#6b7280">+ fuzzy: "رياض"، "Jeddah"</em></div>
-          <div class="guard-col err"><div class="guard-col-hd">✗ Common errors</div>"شراء" → answered goal instead<br>"شقة" → answered type instead<br>"مليون" → jumped to budget<br>"الشمال" → vague direction</div>
+          <div class="guard-col ok"><div class="guard-col-hd">Expected</div>City in KNOWN_CITIES set<br>"الرياض"، "جدة"، "مكة"<br><em style="color:#6b7280">+ fuzzy: "رياض"، "Jeddah"</em></div>
+          <div class="guard-col err"><div class="guard-col-hd">Common errors</div>"شراء" → answered goal instead<br>"شقة" → answered type instead<br>"مليون" → jumped to budget<br>"الشمال" → vague direction</div>
         </div>
-        <div class="guard-action">⚡ Cross-phase: if goal/type detected → bank it + reply "أعرف أنك تريد X! في أي مدينة؟". Unknown string → fuzzy top-3 suggestions.</div>
+        <div class="guard-action">Cross-phase: if goal/type detected → bank it + reply "أعرف أنك تريد X! في أي مدينة؟". Unknown string → fuzzy top-3 suggestions.</div>
         <div class="guard-code">cls = classify(text)
 if cls == 'goal': session.goal = text
     reply(f"أعرف أنك تريد {text}! في أي مدينة؟")
@@ -321,10 +484,10 @@ else:
         <div class="guard-phase">Phase 2b · Goal detection</div>
         <div class="guard-q">سؤال: هل للشراء أم للإيجار؟</div>
         <div class="guard-cols">
-          <div class="guard-col ok"><div class="guard-col-hd">✓ Expected</div>شراء · بيع · إيجار<br>buy · rent · sell<br><em style="color:#6b7280">+ fuzzy: "ابي اشتري"</em></div>
-          <div class="guard-col err"><div class="guard-col-hd">✗ Common errors</div>"الرياض" → repeated the city<br>"فيلا" → answered type instead<br>"500 ألف" → jumped to budget<br>"لا أعرف" → uncertain</div>
+          <div class="guard-col ok"><div class="guard-col-hd">Expected</div>شراء · بيع · إيجار<br>buy · rent · sell<br><em style="color:#6b7280">+ fuzzy: "ابي اشتري"</em></div>
+          <div class="guard-col err"><div class="guard-col-hd">Common errors</div>"الرياض" → repeated the city<br>"فيلا" → answered type instead<br>"500 ألف" → jumped to budget<br>"لا أعرف" → uncertain</div>
         </div>
-        <div class="guard-action">⚡ Repeated city → confirm "نعم {city}، شراء أم إيجار؟". Type leaked → bank it. "لا أعرف" → default "شراء".</div>
+        <div class="guard-action">Repeated city → confirm "نعم {city}، شراء أم إيجار؟". Type leaked → bank it. "لا أعرف" → default "شراء".</div>
         <div class="guard-code">cls = classify(text)
 if cls == 'city':  reply(f"نعم {text}، شراء أم إيجار؟")
 elif cls == 'type': session.prop_type = text; re_ask_goal()
@@ -336,10 +499,10 @@ else: retry(hint="شراء أو إيجار؟", max=2, default='شراء')</div>
         <div class="guard-phase">Phase 2c · Property type</div>
         <div class="guard-q">سؤال: ما نوع العقار؟</div>
         <div class="guard-cols">
-          <div class="guard-col ok"><div class="guard-col-hd">✓ Expected</div>شقة · فيلا · أرض · دور<br>مكتب · استراحة · عمارة<br><em style="color:#6b7280">+ fuzzy: "فلل"، "apartment"</em></div>
-          <div class="guard-col err"><div class="guard-col-hd">✗ Common errors</div>"الرياض" → city repeated<br>"شراء" → goal repeated<br>"3 غرف" → answered bedrooms<br>"كبير" → vague description</div>
+          <div class="guard-col ok"><div class="guard-col-hd">Expected</div>شقة · فيلا · أرض · دور<br>مكتب · استراحة · عمارة<br><em style="color:#6b7280">+ fuzzy: "فلل"، "apartment"</em></div>
+          <div class="guard-col err"><div class="guard-col-hd">Common errors</div>"الرياض" → city repeated<br>"شراء" → goal repeated<br>"3 غرف" → answered bedrooms<br>"كبير" → vague description</div>
         </div>
-        <div class="guard-action">⚡ "3 غرف" → infer type=شقة + bank bedrooms=3. Vague → show type button list. Max 2 retries → buttons.</div>
+        <div class="guard-action">"3 غرف" → infer type=شقة + bank bedrooms=3. Vague → show type button list. Max 2 retries → buttons.</div>
         <div class="guard-code">m = re.search(r'(\d+)\s*غرف', text)
 if m:
     session.bedrooms = int(m.group(1))
@@ -355,10 +518,10 @@ else:
         <div class="guard-phase">Phase 3 · Budget & Context</div>
         <div class="guard-q">سؤال: ما هي ميزانيتك؟</div>
         <div class="guard-cols">
-          <div class="guard-col ok"><div class="guard-col-hd">✓ Expected</div>"500 ألف"، "مليون ونص"<br>"من 300 إلى 700 ألف"<br><em style="color:#6b7280">numeric + Arabic unit</em></div>
-          <div class="guard-col err"><div class="guard-col-hd">✗ Common errors</div>"مش متأكد" → uncertain<br>"حسب المكان" → conditional<br>"300" → number, missing unit<br>"غالي" → vague qualifier</div>
+          <div class="guard-col ok"><div class="guard-col-hd">Expected</div>"500 ألف"، "مليون ونص"<br>"من 300 إلى 700 ألف"<br><em style="color:#6b7280">numeric + Arabic unit</em></div>
+          <div class="guard-col err"><div class="guard-col-hd">Common errors</div>"مش متأكد" → uncertain<br>"حسب المكان" → conditional<br>"300" → number, missing unit<br>"غالي" → vague qualifier</div>
         </div>
-        <div class="guard-action">⚡ Bare number → confirm unit "هل تقصد 300 ألف؟". Vague → offer preset ranges as buttons. "مش متأكد" → skip budget filter entirely.</div>
+        <div class="guard-action">Bare number → confirm unit "هل تقصد 300 ألف؟". Vague → offer preset ranges as buttons. "مش متأكد" → skip budget filter entirely.</div>
         <div class="guard-code">nums = extract_numbers(text)  # handles "ونص"→0.5M
 if not nums: show_budget_ranges(); retry(max=1, then='skip')
 elif len(nums)==1 and no_unit(text):
@@ -370,64 +533,52 @@ else:
 
     </div>
 
-    <div class="rec-section-title">suggested implementation</div>
+    <div class="rec-section-title">status</div>
     <div class="rec-grid">
-      <div class="rec-card info">
-        <span class="rec-tag info">classifier</span>
-        <div class="rec-title">Universal InputClassifier</div>
-        <div class="rec-body">A single <code>classify(text)</code> called at the top of every phase handler. Returns one of: <code>city | goal | type | persona | name | number | unknown</code>. Prevents wrong data from silently polluting session fields.</div>
-        <div class="rec-code">CITY_SET   = load_cities()      # ~150 cities
-GOAL_KW   = {"شراء","إيجار","بيع","rent","buy"}
-TYPE_KW   = {"شقة","فيلا","أرض","مكتب","دور"}
-PERSONA_KW= {"مشتري","مستثمر","وكيل"}
+      <div class="rec-card good">
+        <span class="rec-tag good">implemented</span>
+        <div class="rec-title">classify() — Universal InputClassifier</div>
+        <div class="rec-body">10-class classifier used at the top of every guarded phase handler. Uses regex + NLU extractors from <code>nlu.py</code>. Priority order prevents budget/rooms from matching as city.</div>
+        <div class="rec-code"># chat/pipeline/input_guard.py
+from .nlu import extract_city, extract_goal,
+                 extract_property_type, extract_rooms
 
-def classify(text: str) -> str:
-    t = text.strip().lower()
-    if t in GOAL_KW:    return 'goal'
-    if t in TYPE_KW:    return 'type'
-    if t in PERSONA_KW: return 'persona'
-    if fuzzy(t, CITY_SET, cutoff=80): return 'city'
-    if re.search(r'\d', t): return 'number'
-    return 'unknown'</div>
+MAX_RETRIES = 2  # guard stands down after 2 wrong answers</div>
       </div>
-      <div class="rec-card info">
-        <span class="rec-tag info">cross-phase</span>
-        <div class="rec-title">Answer Banking</div>
-        <div class="rec-body">When a user answers ahead of the current phase, store the answer in <code>session_data['banked']</code> and skip that question later. Recovers ~30% of sessions that answer out-of-order.</div>
-        <div class="rec-code">def bank_answer(session, field, value):
-    sd = session.session_data or {}
-    sd.setdefault('banked', {})[field] = value
-    session.session_data = sd
-    session.save(update_fields=['session_data'])
+      <div class="rec-card good">
+        <span class="rec-tag good">implemented</span>
+        <div class="rec-title">Answer Banking — session.extra</div>
+        <div class="rec-body">Cross-phase answers stored in <code>session.extra['banked']</code> (existing JSONField on <code>ConversationPipelineSession</code>). Retry counts stored as <code>session.extra['guard_retry_{qid}']</code>.</div>
+        <div class="rec-code"># Stored in ConversationPipelineSession.extra (JSONField)
+{
+  "banked": {"city": "الرياض", "goal": "buy"},
+  "guard_retry_2.1": 1
+}</div>
+      </div>
+      <div class="rec-card good">
+        <span class="rec-tag good">implemented</span>
+        <div class="rec-title">Retry Counter — no infinite loops</div>
+        <div class="rec-body">After <code>MAX_RETRIES=2</code> consecutive cross-phase answers to the same question, the guard returns <code>None</code> and lets the phase handler proceed with whatever it has. Retry count resets on a correct answer.</div>
+        <div class="rec-code">def _increment_retries(session, question_id):
+    key = f'guard_retry_{question_id}'
+    session.extra[key] = session.extra.get(key, 0) + 1
+    session.save(update_fields=['extra', 'updated_at'])
 
-# In each phase handler:
-if field in session.session_data.get('banked', {}):
-    session.field = banked[field]
-    skip_question(); advance_phase()</div>
+def _reset_retries(session, question_id):
+    session.extra.pop(f'guard_retry_{question_id}', None)
+    session.save(...)</div>
       </div>
-      <div class="rec-card info">
-        <span class="rec-tag info">retry</span>
-        <div class="rec-title">Retry Counter per Phase</div>
-        <div class="rec-body">Track retries per phase in session. After max retries, use a sensible default and advance — never loop forever. Show buttons on the second retry instead of open text.</div>
-        <div class="rec-code">def retry_or_default(session, phase_key, default):
-    n = session.session_data.get(f'retry_{phase_key}', 0)
-    if n >= 2:
-        session.session_data[phase_key] = default
-        advance_phase(session)
-        return True   # used default
-    session.session_data[f'retry_{phase_key}'] = n + 1
-    session.save(update_fields=['session_data'])
-    return False</div>
-      </div>
-      <div class="rec-card critical">
-        <span class="rec-tag critical">missing now</span>
-        <div class="rec-title">No validation exists in current code</div>
-        <div class="rec-body">All phase handlers accept any non-empty string. A cross-phase answer silently corrupts the session field — e.g. if user types "شراء" when asked for city, the city field is set to "شراء" and every AI search returns zero results.</div>
-        <div class="rec-code"># Current code (Phase 2a handler, views.py):
-session.city = user_text   # ← no guard at all
-# If user_text == "شراء" → city="شراء"
-# → Gemini query: city=شراء → 0 results always
-# → User thinks bot is broken</div>
+      <div class="rec-card good">
+        <span class="rec-tag good">resolved</span>
+        <div class="rec-title">Cross-phase corruption — fixed</div>
+        <div class="rec-body">Phase handlers for Q1.1B, Q2.1, Q2.2, Q2.3 now all call <code>check_phase_input()</code> before saving. A user typing "شراء" when asked for city now gets: <em>"ممتاز، هدفك الشراء! في أي مدينة تبحث؟"</em> — goal banked, city re-asked.</div>
+        <div class="rec-code"># Before (broken):
+session.p2_city = user_text  # no guard → city="شراء"
+
+# After (fixed):
+guard = check_phase_input(session, "city", user_text, ...)
+if guard is not None: return guard  # hint + re-ask
+city = nlu.get("city") or _city_from_raw(user_text)</div>
       </div>
     </div>
   </div>
@@ -443,7 +594,7 @@ session.city = user_text   # ← no guard at all
       <div class="legend-item"><div class="legend-dot" style="background:#f43f5e"></div>Guard fail / retry</div>
       <div class="legend-item"><div class="legend-dot" style="background:#6b7280"></div>Terminal state</div>
     </div>
-    <button class="btn-replay" onclick="replayTree()">↺ replay</button>
+    <button class="btn-replay" onclick="replayTree()">replay</button>
     <div style="clear:both"></div>
     <div class="diagram-wrap" style="overflow-x:auto"><div id="treeWrap"></div></div>
   </div>
@@ -858,7 +1009,7 @@ const TREE_DATA = {
             },
             { l:'Cache\nmiss', c:'#f43f5e', s:'session expired',
               kids:[
-                { l:'✗ Ask to\nretry search', c:'#f43f5e', s:'terminal', kids:[] }
+                { l:'Ask to\nretry search', c:'#f43f5e', s:'terminal', kids:[] }
               ]
             }
           ]
@@ -867,42 +1018,42 @@ const TREE_DATA = {
           kids:[
             { l:'Phase 1\nPersona guard', c:'#4f9eff', s:'new users only',
               kids:[
-                { l:'✓ Valid\npersona', c:'#22d3a0', s:'مشتري / مستثمر',
+                { l:'Valid\npersona', c:'#22d3a0', s:'مشتري / مستثمر',
                   kids:[
                     { l:'Phase 1b\nName guard', c:'#4f9eff', s:'capture name',
                       kids:[
-                        { l:'✓ Valid\nname', c:'#22d3a0', s:'→ Phase 2', kids:[] },
-                        { l:'✗ Retry\n→ default', c:'#f43f5e', s:'max 2 → مستخدم', kids:[] }
+                        { l:'Valid\nname', c:'#22d3a0', s:'→ Phase 2', kids:[] },
+                        { l:'Retry\n→ default', c:'#f43f5e', s:'max 2 → مستخدم', kids:[] }
                       ]
                     }
                   ]
                 },
-                { l:'✗ Cross-phase\ndetected', c:'#f59e0b', s:'city / type given',
+                { l:'Cross-phase\ndetected', c:'#f59e0b', s:'city / type given',
                   kids:[
                     { l:'Bank &\nre-ask persona', c:'#f59e0b', s:'hint sent', kids:[] }
                   ]
                 },
-                { l:'✗ Unknown\n→ retry', c:'#f43f5e', s:'max 2 → buyer', kids:[] }
+                { l:'Unknown\n→ retry', c:'#f43f5e', s:'max 2 → buyer', kids:[] }
               ]
             },
             { l:'Phase 2\nCity guard', c:'#22d3a0', s:'validate city input',
               kids:[
-                { l:'✓ City\nrecognized', c:'#22d3a0', s:'fuzzy matched',
+                { l:'City\nrecognized', c:'#22d3a0', s:'fuzzy matched',
                   kids:[
                     { l:'Phase 2\nGoal guard', c:'#22d3a0', s:'شراء / إيجار',
                       kids:[
-                        { l:'✓ Goal &\nType valid', c:'#22d3a0', s:'→ Phase 3',
+                        { l:'Goal &\nType valid', c:'#22d3a0', s:'→ Phase 3',
                           kids:[
                             { l:'Phase 3 + 4\n→ AI Search', c:'#f59e0b', s:'Gemini query',
                               kids:[
-                                { l:'✓ Results\n3–10 props', c:'#a855f7', s:'cards sent',
+                                { l:'Results\n3–10 props', c:'#a855f7', s:'cards sent',
                                   kids:[
                                     { l:'عروض\nاكثر', c:'#a855f7', s:'→ pagination loop', kids:[] },
                                     { l:'قارن\nالنتائج', c:'#a855f7', s:'comparison link', kids:[] },
                                     { l:'بحث\nجديد', c:'#6b7280', s:'→ reset session', kids:[] }
                                   ]
                                 },
-                                { l:'✗ Zero\nresults', c:'#f43f5e', s:'no matches',
+                                { l:'Zero\nresults', c:'#f43f5e', s:'no matches',
                                   kids:[
                                     { l:'وسّع\nالبحث', c:'#f59e0b', s:'relaxed AI query', kids:[] }
                                   ]
@@ -911,22 +1062,22 @@ const TREE_DATA = {
                             }
                           ]
                         },
-                        { l:'✗ Cross-phase\ngoal', c:'#f59e0b', s:'city given as goal',
+                        { l:'Cross-phase\ngoal', c:'#f59e0b', s:'city given as goal',
                           kids:[
                             { l:'Bank &\nre-ask goal', c:'#f59e0b', s:'hint', kids:[] }
                           ]
                         },
-                        { l:'✗ Invalid\n→ retry', c:'#f43f5e', s:'show options', kids:[] }
+                        { l:'Invalid\n→ retry', c:'#f43f5e', s:'show options', kids:[] }
                       ]
                     }
                   ]
                 },
-                { l:'✗ Cross-phase\ncity', c:'#f59e0b', s:'goal / type as city',
+                { l:'Cross-phase\ncity', c:'#f59e0b', s:'goal / type as city',
                   kids:[
                     { l:'Bank &\nre-ask city', c:'#f59e0b', s:'hint', kids:[] }
                   ]
                 },
-                { l:'✗ Unknown\ncity', c:'#f43f5e', s:'fuzzy suggestions',
+                { l:'Unknown\ncity', c:'#f43f5e', s:'fuzzy suggestions',
                   kids:[
                     { l:'Show top-3\nmatches', c:'#f43f5e', s:'retry', kids:[] }
                   ]
