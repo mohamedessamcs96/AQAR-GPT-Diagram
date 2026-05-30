@@ -67,6 +67,19 @@
   .anim-line { animation: lineDraw 0.45s ease forwards; }
   .anim-fade { animation: fadeIn 0.25s ease forwards; }
   .anim-box  { animation: fadeInBox 0.3s ease forwards; transform-box: fill-box; transform-origin: center; }
+
+  /* ── Guard cards ── */
+  .guard-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px,1fr)); gap: 1rem; margin-bottom: 2rem; }
+  .guard-card { background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; padding: 1.2rem; }
+  .guard-phase { font-family: var(--font-mono); font-size: 0.6rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 0.5rem; }
+  .guard-q { font-size: 0.9rem; font-weight: 500; color: var(--text); margin-bottom: 0.9rem; padding-bottom: 0.65rem; border-bottom: 1px solid var(--border); }
+  .guard-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; margin-bottom: 0.7rem; }
+  .guard-col { background: var(--bg2); border-radius: 6px; padding: 0.65rem; font-size: 0.73rem; color: #9ca3af; line-height: 1.65; }
+  .guard-col-hd { font-family: var(--font-mono); font-size: 0.58rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 0.35rem; }
+  .guard-col.ok { border: 1px solid rgba(34,211,160,0.18); } .guard-col.ok .guard-col-hd { color: var(--green); }
+  .guard-col.err { border: 1px solid rgba(244,63,94,0.18); } .guard-col.err .guard-col-hd { color: var(--red); }
+  .guard-action { font-size: 0.73rem; color: var(--amber); background: rgba(245,158,11,0.07); border: 1px solid rgba(245,158,11,0.2); border-radius: 5px; padding: 0.45rem 0.65rem; margin-bottom: 0.7rem; line-height: 1.55; }
+  .guard-code { font-family: var(--font-mono); font-size: 0.67rem; background: var(--bg); border: 1px solid var(--border); border-radius: 5px; padding: 0.55rem 0.75rem; color: var(--green); line-height: 1.65; white-space: pre; overflow-x: auto; }
 </style>
 </head>
 <body>
@@ -81,6 +94,8 @@
     <button class="tab active" onclick="switchTab('seq')">sequence diagram</button>
     <button class="tab"        onclick="switchTab('sm')">state machine</button>
     <button class="tab"        onclick="switchTab('rec')">recommendations</button>
+    <button class="tab"        onclick="switchTab('guards')">input guards</button>
+    <button class="tab"        onclick="switchTab('tree')">flow tree</button>
   </div>
 
   <!-- SEQUENCE -->
@@ -245,17 +260,207 @@ def pipeline_session(db):
       </div>
     </div>
   </div>
+
+  <!-- INPUT GUARDS -->
+  <div id="tab-guards" class="tab-panel">
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot" style="background:#22d3a0"></div>Valid input path</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#f43f5e"></div>Invalid / wrong answer</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#f59e0b"></div>Cross-phase (bank + redirect)</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#6b7280"></div>Skip / use default</div>
+    </div>
+    <div class="guard-grid">
+
+      <div class="guard-card">
+        <div class="guard-phase">Phase 1 · Persona detection</div>
+        <div class="guard-q">سؤال: ما هو هدفك؟</div>
+        <div class="guard-cols">
+          <div class="guard-col ok"><div class="guard-col-hd">✓ Expected</div>مشتري · مستثمر · وكيل<br>buyer · investor · agent<br><em style="color:#6b7280">+ fuzzy: "ابي اشتري"</em></div>
+          <div class="guard-col err"><div class="guard-col-hd">✗ Common errors</div>"الرياض" → gave city<br>"شقة" → gave property type<br>"أحمد" → gave his name<br>"كم السعر" → off-topic</div>
+        </div>
+        <div class="guard-action">⚡ Cross-phase: bank leaked city/type into session, still ask persona. Max 2 retries → default "مشتري".</div>
+        <div class="guard-code">cls = classify(text)
+if cls == 'city':   session.city = text; re_ask_persona()
+elif cls == 'type': session.prop_type = text; re_ask_persona()
+elif text not in PERSONA_KW: retry(n=2, default='buyer')</div>
+      </div>
+
+      <div class="guard-card">
+        <div class="guard-phase">Phase 1b · Name capture</div>
+        <div class="guard-q">سؤال: ما اسمك؟</div>
+        <div class="guard-cols">
+          <div class="guard-col ok"><div class="guard-col-hd">✓ Expected</div>Arabic/English name ≥ 2 chars<br>No digits · not a keyword<br><em style="color:#6b7280">e.g. "أحمد"، "Sara"</em></div>
+          <div class="guard-col err"><div class="guard-col-hd">✗ Common errors</div>"0512345678" → gave phone<br>"مليون" → budget leaked<br>"شراء" → goal leaked<br>"؟" or 1 char → too short</div>
+        </div>
+        <div class="guard-action">⚡ Max 2 retries → default "مستخدم". Looks like phone number → bank silently as buyer_phone.</div>
+        <div class="guard-code">if re.match(r'^\d{9,}$', text):  session.phone = text; ask_name()
+elif len(text.strip()) < 2:    retry()
+elif text in ALL_KEYWORDS:     retry(hint="اسمك الكريم فقط")
+else: session.name = text.strip()</div>
+      </div>
+
+      <div class="guard-card">
+        <div class="guard-phase">Phase 2a · City input</div>
+        <div class="guard-q">سؤال: في أي مدينة تبحث؟</div>
+        <div class="guard-cols">
+          <div class="guard-col ok"><div class="guard-col-hd">✓ Expected</div>City in KNOWN_CITIES set<br>"الرياض"، "جدة"، "مكة"<br><em style="color:#6b7280">+ fuzzy: "رياض"، "Jeddah"</em></div>
+          <div class="guard-col err"><div class="guard-col-hd">✗ Common errors</div>"شراء" → answered goal instead<br>"شقة" → answered type instead<br>"مليون" → jumped to budget<br>"الشمال" → vague direction</div>
+        </div>
+        <div class="guard-action">⚡ Cross-phase: if goal/type detected → bank it + reply "أعرف أنك تريد X! في أي مدينة؟". Unknown string → fuzzy top-3 suggestions.</div>
+        <div class="guard-code">cls = classify(text)
+if cls == 'goal': session.goal = text
+    reply(f"أعرف أنك تريد {text}! في أي مدينة؟")
+elif cls == 'type': session.prop_type = text; reply("ما المدينة؟")
+else:
+    city = fuzzy_match(text, KNOWN_CITIES, threshold=80)
+    if city: session.city = city
+    else: suggest_cities(text); retry()</div>
+      </div>
+
+      <div class="guard-card">
+        <div class="guard-phase">Phase 2b · Goal detection</div>
+        <div class="guard-q">سؤال: هل للشراء أم للإيجار؟</div>
+        <div class="guard-cols">
+          <div class="guard-col ok"><div class="guard-col-hd">✓ Expected</div>شراء · بيع · إيجار<br>buy · rent · sell<br><em style="color:#6b7280">+ fuzzy: "ابي اشتري"</em></div>
+          <div class="guard-col err"><div class="guard-col-hd">✗ Common errors</div>"الرياض" → repeated the city<br>"فيلا" → answered type instead<br>"500 ألف" → jumped to budget<br>"لا أعرف" → uncertain</div>
+        </div>
+        <div class="guard-action">⚡ Repeated city → confirm "نعم {city}، شراء أم إيجار؟". Type leaked → bank it. "لا أعرف" → default "شراء".</div>
+        <div class="guard-code">cls = classify(text)
+if cls == 'city':  reply(f"نعم {text}، شراء أم إيجار؟")
+elif cls == 'type': session.prop_type = text; re_ask_goal()
+elif 'لا أعرف' in text: session.goal = 'شراء'; advance()
+else: retry(hint="شراء أو إيجار؟", max=2, default='شراء')</div>
+      </div>
+
+      <div class="guard-card">
+        <div class="guard-phase">Phase 2c · Property type</div>
+        <div class="guard-q">سؤال: ما نوع العقار؟</div>
+        <div class="guard-cols">
+          <div class="guard-col ok"><div class="guard-col-hd">✓ Expected</div>شقة · فيلا · أرض · دور<br>مكتب · استراحة · عمارة<br><em style="color:#6b7280">+ fuzzy: "فلل"، "apartment"</em></div>
+          <div class="guard-col err"><div class="guard-col-hd">✗ Common errors</div>"الرياض" → city repeated<br>"شراء" → goal repeated<br>"3 غرف" → answered bedrooms<br>"كبير" → vague description</div>
+        </div>
+        <div class="guard-action">⚡ "3 غرف" → infer type=شقة + bank bedrooms=3. Vague → show type button list. Max 2 retries → buttons.</div>
+        <div class="guard-code">m = re.search(r'(\d+)\s*غرف', text)
+if m:
+    session.bedrooms = int(m.group(1))
+    session.prop_type = 'شقة'   # infer
+    advance()
+else:
+    t = fuzzy_match(text, PROP_TYPES)
+    if t: session.prop_type = t
+    else: show_type_buttons(); retry(max=2)</div>
+      </div>
+
+      <div class="guard-card">
+        <div class="guard-phase">Phase 3 · Budget & Context</div>
+        <div class="guard-q">سؤال: ما هي ميزانيتك؟</div>
+        <div class="guard-cols">
+          <div class="guard-col ok"><div class="guard-col-hd">✓ Expected</div>"500 ألف"، "مليون ونص"<br>"من 300 إلى 700 ألف"<br><em style="color:#6b7280">numeric + Arabic unit</em></div>
+          <div class="guard-col err"><div class="guard-col-hd">✗ Common errors</div>"مش متأكد" → uncertain<br>"حسب المكان" → conditional<br>"300" → number, missing unit<br>"غالي" → vague qualifier</div>
+        </div>
+        <div class="guard-action">⚡ Bare number → confirm unit "هل تقصد 300 ألف؟". Vague → offer preset ranges as buttons. "مش متأكد" → skip budget filter entirely.</div>
+        <div class="guard-code">nums = extract_numbers(text)  # handles "ونص"→0.5M
+if not nums: show_budget_ranges(); retry(max=1, then='skip')
+elif len(nums)==1 and no_unit(text):
+    confirm_unit(nums[0])       # "هل تقصد X ألف؟"
+else:
+    mn, mx = parse_range(nums)
+    session.price_min, session.price_max = mn, mx</div>
+      </div>
+
+    </div>
+
+    <div class="rec-section-title">suggested implementation</div>
+    <div class="rec-grid">
+      <div class="rec-card info">
+        <span class="rec-tag info">classifier</span>
+        <div class="rec-title">Universal InputClassifier</div>
+        <div class="rec-body">A single <code>classify(text)</code> called at the top of every phase handler. Returns one of: <code>city | goal | type | persona | name | number | unknown</code>. Prevents wrong data from silently polluting session fields.</div>
+        <div class="rec-code">CITY_SET   = load_cities()      # ~150 cities
+GOAL_KW   = {"شراء","إيجار","بيع","rent","buy"}
+TYPE_KW   = {"شقة","فيلا","أرض","مكتب","دور"}
+PERSONA_KW= {"مشتري","مستثمر","وكيل"}
+
+def classify(text: str) -> str:
+    t = text.strip().lower()
+    if t in GOAL_KW:    return 'goal'
+    if t in TYPE_KW:    return 'type'
+    if t in PERSONA_KW: return 'persona'
+    if fuzzy(t, CITY_SET, cutoff=80): return 'city'
+    if re.search(r'\d', t): return 'number'
+    return 'unknown'</div>
+      </div>
+      <div class="rec-card info">
+        <span class="rec-tag info">cross-phase</span>
+        <div class="rec-title">Answer Banking</div>
+        <div class="rec-body">When a user answers ahead of the current phase, store the answer in <code>session_data['banked']</code> and skip that question later. Recovers ~30% of sessions that answer out-of-order.</div>
+        <div class="rec-code">def bank_answer(session, field, value):
+    sd = session.session_data or {}
+    sd.setdefault('banked', {})[field] = value
+    session.session_data = sd
+    session.save(update_fields=['session_data'])
+
+# In each phase handler:
+if field in session.session_data.get('banked', {}):
+    session.field = banked[field]
+    skip_question(); advance_phase()</div>
+      </div>
+      <div class="rec-card info">
+        <span class="rec-tag info">retry</span>
+        <div class="rec-title">Retry Counter per Phase</div>
+        <div class="rec-body">Track retries per phase in session. After max retries, use a sensible default and advance — never loop forever. Show buttons on the second retry instead of open text.</div>
+        <div class="rec-code">def retry_or_default(session, phase_key, default):
+    n = session.session_data.get(f'retry_{phase_key}', 0)
+    if n >= 2:
+        session.session_data[phase_key] = default
+        advance_phase(session)
+        return True   # used default
+    session.session_data[f'retry_{phase_key}'] = n + 1
+    session.save(update_fields=['session_data'])
+    return False</div>
+      </div>
+      <div class="rec-card critical">
+        <span class="rec-tag critical">missing now</span>
+        <div class="rec-title">No validation exists in current code</div>
+        <div class="rec-body">All phase handlers accept any non-empty string. A cross-phase answer silently corrupts the session field — e.g. if user types "شراء" when asked for city, the city field is set to "شراء" and every AI search returns zero results.</div>
+        <div class="rec-code"># Current code (Phase 2a handler, views.py):
+session.city = user_text   # ← no guard at all
+# If user_text == "شراء" → city="شراء"
+# → Gemini query: city=شراء → 0 results always
+# → User thinks bot is broken</div>
+      </div>
+    </div>
+  </div>
+  <!-- /tab-guards -->
+
+  <!-- FLOW TREE -->
+  <div id="tab-tree" class="tab-panel">
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot" style="background:#a855f7"></div>User / entry</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#4f9eff"></div>System guard</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#22d3a0"></div>Valid path</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#f59e0b"></div>AI / bank &amp; redirect</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#f43f5e"></div>Guard fail / retry</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#6b7280"></div>Terminal state</div>
+    </div>
+    <button class="btn-replay" onclick="replayTree()">↺ replay</button>
+    <div style="clear:both"></div>
+    <div class="diagram-wrap" style="overflow-x:auto"><div id="treeWrap"></div></div>
+  </div>
+  <!-- /tab-tree -->
+
 </div>
 
 <script>
 // ── Tab switching ────────────────────────────────────────────────────────────
 function switchTab(name) {
-  ['seq','sm','rec'].forEach((n, i) => {
+  ['seq','sm','rec','guards','tree'].forEach((n, i) => {
     document.querySelectorAll('.tab')[i].classList.toggle('active', n === name);
     document.getElementById('tab-'+n).classList.toggle('active', n === name);
   });
-  if (name === 'sm')  renderSM();
-  if (name === 'seq') renderSeq();
+  if (name === 'sm')     renderSM();
+  if (name === 'seq')    renderSeq();
+  if (name === 'tree')   renderTree();
 }
 
 // ── helpers ──────────────────────────────────────────────────────────────────
@@ -626,6 +831,198 @@ function renderSeq(force) {
   wrap.appendChild(svg);
 }
 function replaySeq() { seqRendered = false; renderSeq(true); }
+
+// ══════════════════════════════════════════════════════════ FLOW TREE ════════
+const TREE_DATA = {
+  l:'Incoming\nMessage', c:'#a855f7', s:'POST /whatsapp',
+  kids:[
+    { l:'Drop\n(duplicate)', c:'#6b7280', s:'already processed', kids:[] },
+    { l:'Process\nmessage', c:'#4f9eff', s:'dedup passed',
+      kids:[
+        { l:'Reset /\nGreeting', c:'#f43f5e', s:'keyword trigger',
+          kids:[
+            { l:'Reply &\nclear session', c:'#6b7280', s:'terminal', kids:[] }
+          ]
+        },
+        { l:'Pagination\n"عروض اكثر"', c:'#a855f7', s:'button tap',
+          kids:[
+            { l:'Cache\nhit', c:'#22d3a0', s:'results in DB',
+              kids:[
+                { l:'Send batch\noffset + 3', c:'#a855f7', s:'props sent',
+                  kids:[
+                    { l:'More remain\n→ show button', c:'#a855f7', s:'loop back', kids:[] },
+                    { l:'All shown\n→ end msg', c:'#6b7280', s:'terminal', kids:[] }
+                  ]
+                }
+              ]
+            },
+            { l:'Cache\nmiss', c:'#f43f5e', s:'session expired',
+              kids:[
+                { l:'✗ Ask to\nretry search', c:'#f43f5e', s:'terminal', kids:[] }
+              ]
+            }
+          ]
+        },
+        { l:'Pipeline\nPhases 1–4', c:'#4f9eff', s:'normal flow',
+          kids:[
+            { l:'Phase 1\nPersona guard', c:'#4f9eff', s:'new users only',
+              kids:[
+                { l:'✓ Valid\npersona', c:'#22d3a0', s:'مشتري / مستثمر',
+                  kids:[
+                    { l:'Phase 1b\nName guard', c:'#4f9eff', s:'capture name',
+                      kids:[
+                        { l:'✓ Valid\nname', c:'#22d3a0', s:'→ Phase 2', kids:[] },
+                        { l:'✗ Retry\n→ default', c:'#f43f5e', s:'max 2 → مستخدم', kids:[] }
+                      ]
+                    }
+                  ]
+                },
+                { l:'✗ Cross-phase\ndetected', c:'#f59e0b', s:'city / type given',
+                  kids:[
+                    { l:'Bank &\nre-ask persona', c:'#f59e0b', s:'hint sent', kids:[] }
+                  ]
+                },
+                { l:'✗ Unknown\n→ retry', c:'#f43f5e', s:'max 2 → buyer', kids:[] }
+              ]
+            },
+            { l:'Phase 2\nCity guard', c:'#22d3a0', s:'validate city input',
+              kids:[
+                { l:'✓ City\nrecognized', c:'#22d3a0', s:'fuzzy matched',
+                  kids:[
+                    { l:'Phase 2\nGoal guard', c:'#22d3a0', s:'شراء / إيجار',
+                      kids:[
+                        { l:'✓ Goal &\nType valid', c:'#22d3a0', s:'→ Phase 3',
+                          kids:[
+                            { l:'Phase 3 + 4\n→ AI Search', c:'#f59e0b', s:'Gemini query',
+                              kids:[
+                                { l:'✓ Results\n3–10 props', c:'#a855f7', s:'cards sent',
+                                  kids:[
+                                    { l:'عروض\nاكثر', c:'#a855f7', s:'→ pagination loop', kids:[] },
+                                    { l:'قارن\nالنتائج', c:'#a855f7', s:'comparison link', kids:[] },
+                                    { l:'بحث\nجديد', c:'#6b7280', s:'→ reset session', kids:[] }
+                                  ]
+                                },
+                                { l:'✗ Zero\nresults', c:'#f43f5e', s:'no matches',
+                                  kids:[
+                                    { l:'وسّع\nالبحث', c:'#f59e0b', s:'relaxed AI query', kids:[] }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        { l:'✗ Cross-phase\ngoal', c:'#f59e0b', s:'city given as goal',
+                          kids:[
+                            { l:'Bank &\nre-ask goal', c:'#f59e0b', s:'hint', kids:[] }
+                          ]
+                        },
+                        { l:'✗ Invalid\n→ retry', c:'#f43f5e', s:'show options', kids:[] }
+                      ]
+                    }
+                  ]
+                },
+                { l:'✗ Cross-phase\ncity', c:'#f59e0b', s:'goal / type as city',
+                  kids:[
+                    { l:'Bank &\nre-ask city', c:'#f59e0b', s:'hint', kids:[] }
+                  ]
+                },
+                { l:'✗ Unknown\ncity', c:'#f43f5e', s:'fuzzy suggestions',
+                  kids:[
+                    { l:'Show top-3\nmatches', c:'#f43f5e', s:'retry', kids:[] }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+};
+
+const T_LEAF_H = 54, T_LEVEL_W = 148, T_BW = 126, T_BH = 44, T_PAD = 24;
+
+function tLeaves(n) {
+  if (!n.kids || !n.kids.length) return 1;
+  return n.kids.reduce((s,k) => s + tLeaves(k), 0);
+}
+
+function tAssign(node, depth, yOffset) {
+  const lv = tLeaves(node);
+  node._y = yOffset + lv * T_LEAF_H / 2;
+  node._x = T_PAD + depth * T_LEVEL_W + T_BW / 2;
+  let cY = yOffset;
+  (node.kids || []).forEach(kid => {
+    tAssign(kid, depth + 1, cY);
+    cY += tLeaves(kid) * T_LEAF_H;
+  });
+}
+
+function tMaxDepth(n) {
+  if (!n.kids || !n.kids.length) return 0;
+  return 1 + Math.max(...n.kids.map(tMaxDepth));
+}
+
+function tEdges(svg, node, delay) {
+  (node.kids || []).forEach(kid => {
+    const x1 = node._x + T_BW/2, y1 = node._y;
+    const x2 = kid._x  - T_BW/2, y2 = kid._y;
+    const mx = (x1 + x2) / 2;
+    const plen = Math.abs(x2-x1) + Math.abs(y2-y1) + 60;
+    const path = el('path', {
+      d: `M${x1} ${y1} C${mx} ${y1} ${mx} ${y2} ${x2} ${y2}`,
+      fill:'none', stroke: kid.c, 'stroke-width':'1.3',
+      'stroke-dasharray': plen, 'stroke-dashoffset': plen
+    });
+    path.style.animation = `lineDraw 0.5s ${delay}ms ease forwards`;
+    svg.appendChild(path);
+    tEdges(svg, kid, delay + 55);
+  });
+}
+
+function tNodes(svg, node, delay) {
+  const bx = node._x - T_BW/2, by = node._y - T_BH/2;
+  const g = el('g');
+  const rect = el('rect', { x:bx, y:by, width:T_BW, height:T_BH, rx:'6', fill:'#181c24', stroke:node.c, 'stroke-width':'1' });
+  rect.style.cssText = `opacity:0;animation:fadeInBox 0.35s ${delay}ms ease forwards;transform-box:fill-box;transform-origin:center`;
+  g.appendChild(rect);
+  const lines = node.l.split('\n');
+  if (lines.length > 1) {
+    const t1 = el('text', { x:node._x, y:node._y - 6, 'text-anchor':'middle' }, lines[0]);
+    t1.style.cssText = `font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:500;fill:${node.c};opacity:0;animation:fadeIn 0.2s ${delay+280}ms ease forwards`;
+    const t2 = el('text', { x:node._x, y:node._y + 8, 'text-anchor':'middle' }, lines[1]);
+    t2.style.cssText = `font-family:'IBM Plex Mono',monospace;font-size:9px;fill:#9ca3af;opacity:0;animation:fadeIn 0.2s ${delay+290}ms ease forwards`;
+    g.appendChild(t1); g.appendChild(t2);
+  } else {
+    const t = el('text', { x:node._x, y:node._y + 4, 'text-anchor':'middle' }, node.l);
+    t.style.cssText = `font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:500;fill:${node.c};opacity:0;animation:fadeIn 0.2s ${delay+280}ms ease forwards`;
+    g.appendChild(t);
+  }
+  if (node.s) {
+    const ts = el('text', { x:node._x, y:by + T_BH + 11, 'text-anchor':'middle' }, node.s);
+    ts.style.cssText = `font-family:'IBM Plex Mono',monospace;font-size:7.5px;fill:#6b7280;opacity:0;animation:fadeIn 0.2s ${delay+300}ms ease forwards`;
+    g.appendChild(ts);
+  }
+  svg.appendChild(g);
+  (node.kids || []).forEach(kid => tNodes(svg, kid, delay + 48));
+}
+
+let treeRendered = false;
+function renderTree(force) {
+  if (treeRendered && !force) return;
+  treeRendered = true;
+  const wrap = document.getElementById('treeWrap');
+  wrap.innerHTML = '';
+  tAssign(TREE_DATA, 0, T_PAD);
+  const depth = tMaxDepth(TREE_DATA);
+  const W = T_PAD * 2 + (depth + 1) * T_LEVEL_W + T_BW;
+  const H = tLeaves(TREE_DATA) * T_LEAF_H + T_PAD * 2 + 18;
+  const svg = el('svg', { width: W, height: H });
+  tEdges(svg, TREE_DATA, 80);
+  tNodes(svg, TREE_DATA, 160);
+  wrap.appendChild(svg);
+}
+function replayTree() { treeRendered = false; renderTree(true); }
 
 // init
 document.addEventListener('DOMContentLoaded', () => { renderSeq(); });
