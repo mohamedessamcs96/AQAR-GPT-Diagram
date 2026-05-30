@@ -6,334 +6,71 @@
 <title>AqarGPT — Pipeline Diagrams</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600&display=swap');
-
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
   :root {
-    --bg: #0a0c10;
-    --bg2: #111318;
-    --bg3: #181c24;
-    --border: rgba(255,255,255,0.07);
-    --border2: rgba(255,255,255,0.14);
-    --text: #e8eaf0;
-    --muted: #6b7280;
-    --accent: #4f9eff;
-    --accent2: #7c3aed;
-    --green: #22d3a0;
-    --amber: #f59e0b;
-    --red: #f43f5e;
-    --teal: #14b8a6;
-    --purple: #a855f7;
+    --bg: #0a0c10; --bg2: #111318; --bg3: #181c24;
+    --border: rgba(255,255,255,0.07); --border2: rgba(255,255,255,0.14);
+    --text: #e8eaf0; --muted: #6b7280;
+    --accent: #4f9eff; --green: #22d3a0; --amber: #f59e0b;
+    --red: #f43f5e; --purple: #a855f7;
     --font-mono: 'IBM Plex Mono', monospace;
     --font-main: 'IBM Plex Sans Arabic', sans-serif;
   }
-
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: var(--font-main);
-    min-height: 100vh;
-    overflow-x: hidden;
-  }
-
-  /* Grid noise background */
+  body { background: var(--bg); color: var(--text); font-family: var(--font-main); min-height: 100vh; overflow-x: hidden; }
   body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background-image:
-      linear-gradient(rgba(79,158,255,0.03) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(79,158,255,0.03) 1px, transparent 1px);
+    content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    background-image: linear-gradient(rgba(79,158,255,0.03) 1px,transparent 1px), linear-gradient(90deg,rgba(79,158,255,0.03) 1px,transparent 1px);
     background-size: 40px 40px;
-    pointer-events: none;
-    z-index: 0;
   }
-
-  .page {
-    position: relative;
-    z-index: 1;
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 2rem 1.5rem 4rem;
-  }
-
-  /* Header */
-  .header {
-    display: flex;
-    align-items: baseline;
-    gap: 1rem;
-    margin-bottom: 2.5rem;
-    padding-bottom: 1.5rem;
-    border-bottom: 1px solid var(--border);
-  }
-  .header h1 {
-    font-family: var(--font-mono);
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: var(--accent);
-    letter-spacing: -0.02em;
-  }
-  .header span {
-    font-family: var(--font-mono);
-    font-size: 0.75rem;
-    color: var(--muted);
-  }
-  .header-badge {
-    margin-left: auto;
-    font-family: var(--font-mono);
-    font-size: 0.65rem;
-    color: var(--green);
-    border: 1px solid rgba(34,211,160,0.3);
-    border-radius: 3px;
-    padding: 2px 8px;
-    letter-spacing: 0.05em;
-  }
-
-  /* Tabs */
-  .tabs {
-    display: flex;
-    gap: 0;
-    border-bottom: 1px solid var(--border);
-    margin-bottom: 2rem;
-  }
-  .tab {
-    font-family: var(--font-mono);
-    font-size: 0.75rem;
-    color: var(--muted);
-    padding: 0.6rem 1.2rem;
-    cursor: pointer;
-    border: 1px solid transparent;
-    border-bottom: none;
-    border-radius: 4px 4px 0 0;
-    transition: all 0.2s;
-    background: transparent;
-    letter-spacing: 0.02em;
-    position: relative;
-    top: 1px;
-  }
+  .page { position: relative; z-index: 1; max-width: 1200px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+  .header { display: flex; align-items: baseline; gap: 1rem; margin-bottom: 2.5rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--border); }
+  .header h1 { font-family: var(--font-mono); font-size: 1.1rem; font-weight: 600; color: var(--accent); letter-spacing: -0.02em; }
+  .header span { font-family: var(--font-mono); font-size: 0.75rem; color: var(--muted); }
+  .header-badge { margin-left: auto; font-family: var(--font-mono); font-size: 0.65rem; color: var(--green); border: 1px solid rgba(34,211,160,0.3); border-radius: 3px; padding: 2px 8px; letter-spacing: 0.05em; }
+  .tabs { display: flex; gap: 0; border-bottom: 1px solid var(--border); margin-bottom: 2rem; }
+  .tab { font-family: var(--font-mono); font-size: 0.75rem; color: var(--muted); padding: 0.6rem 1.2rem; cursor: pointer; border: 1px solid transparent; border-bottom: none; border-radius: 4px 4px 0 0; transition: all 0.2s; background: transparent; letter-spacing: 0.02em; position: relative; top: 1px; }
   .tab:hover { color: var(--text); }
-  .tab.active {
-    color: var(--accent);
-    border-color: var(--border);
-    background: var(--bg2);
-  }
+  .tab.active { color: var(--accent); border-color: var(--border); background: var(--bg2); }
   .tab-panel { display: none; }
   .tab-panel.active { display: block; }
+  .diagram-wrap { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 1.5rem; overflow-x: auto; }
+  .legend { display: flex; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem; padding: 0.75rem 1rem; background: var(--bg3); border-radius: 6px; border: 1px solid var(--border); }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-family: var(--font-mono); font-size: 0.65rem; color: var(--muted); }
+  .legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .btn-replay { font-family: var(--font-mono); font-size: 0.7rem; color: var(--accent); border: 1px solid rgba(79,158,255,0.3); background: rgba(79,158,255,0.06); border-radius: 4px; padding: 4px 12px; cursor: pointer; float: right; margin-bottom: 1rem; transition: all 0.2s; }
+  .btn-replay:hover { background: rgba(79,158,255,0.12); }
 
-  /* Sequence diagram */
-  .seq-container {
-    background: var(--bg2);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 2rem;
-    overflow-x: auto;
-  }
-
-  .seq-svg-wrap svg {
-    display: block;
-    min-width: 900px;
-  }
-
-  /* Actors */
-  .actor-box {
-    fill: var(--bg3);
-    stroke: var(--border2);
-    stroke-width: 1;
-  }
-  .actor-text {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 11px;
-    fill: #e8eaf0;
-    font-weight: 500;
-  }
-  .lifeline {
-    stroke: rgba(255,255,255,0.08);
-    stroke-width: 1;
-    stroke-dasharray: 4 4;
-  }
-
-  /* Animated message arrows */
-  .msg-line {
-    stroke-width: 1.5;
-    fill: none;
-    stroke-dasharray: 500;
-    stroke-dashoffset: 500;
-    animation: drawLine 0.4s ease forwards;
-  }
-  .msg-arrow { fill: currentColor; }
-  .msg-label {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 10px;
-    fill: #c4c9d4;
-  }
-  .msg-note {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 9px;
-    fill: var(--muted);
-  }
-
-  @keyframes drawLine {
-    to { stroke-dashoffset: 0; }
-  }
-
-  /* Activation boxes */
-  .activation {
-    fill: rgba(79,158,255,0.12);
-    stroke: rgba(79,158,255,0.3);
-    stroke-width: 1;
-    rx: 2;
-  }
-
-  /* Phase dividers in seq */
-  .phase-band {
-    fill: rgba(124,58,237,0.06);
-    stroke: rgba(124,58,237,0.2);
-    stroke-width: 0.5;
-    rx: 4;
-  }
-  .phase-label {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 9px;
-    fill: #7c3aed;
-    font-weight: 500;
-    letter-spacing: 0.08em;
-  }
-
-  /* State machine */
-  .sm-container {
-    background: var(--bg2);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 2rem;
-    overflow-x: auto;
-  }
-
-  /* Recommendations */
-  .rec-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 1rem;
-  }
-  .rec-card {
-    background: var(--bg2);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 1.25rem;
-    transition: border-color 0.2s, transform 0.2s;
-  }
-  .rec-card:hover {
-    border-color: var(--border2);
-    transform: translateY(-1px);
-  }
+  /* ── Rec cards ── */
+  .rec-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem; }
+  .rec-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem; transition: border-color 0.2s, transform 0.2s; }
+  .rec-card:hover { border-color: var(--border2); transform: translateY(-1px); }
   .rec-card.critical { border-left: 3px solid var(--red); }
   .rec-card.warning  { border-left: 3px solid var(--amber); }
   .rec-card.good     { border-left: 3px solid var(--green); }
   .rec-card.info     { border-left: 3px solid var(--accent); }
-
-  .rec-tag {
-    font-family: var(--font-mono);
-    font-size: 0.6rem;
-    font-weight: 600;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    padding: 2px 7px;
-    border-radius: 3px;
-    display: inline-block;
-    margin-bottom: 0.75rem;
-  }
+  .rec-tag { font-family: var(--font-mono); font-size: 0.6rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; padding: 2px 7px; border-radius: 3px; display: inline-block; margin-bottom: 0.75rem; }
   .rec-tag.critical { background: rgba(244,63,94,0.15); color: var(--red); }
   .rec-tag.warning  { background: rgba(245,158,11,0.15); color: var(--amber); }
   .rec-tag.good     { background: rgba(34,211,160,0.15); color: var(--green); }
   .rec-tag.info     { background: rgba(79,158,255,0.15); color: var(--accent); }
+  .rec-title { font-size: 0.875rem; font-weight: 500; color: var(--text); margin-bottom: 0.5rem; line-height: 1.4; }
+  .rec-body { font-size: 0.78rem; color: var(--muted); line-height: 1.6; }
+  .rec-code { font-family: var(--font-mono); font-size: 0.7rem; background: var(--bg3); border: 1px solid var(--border); border-radius: 4px; padding: 0.5rem 0.75rem; margin-top: 0.75rem; color: var(--green); line-height: 1.5; white-space: pre-wrap; }
+  .rec-section-title { font-family: var(--font-mono); font-size: 0.7rem; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; margin: 2rem 0 1rem; display: flex; align-items: center; gap: 0.5rem; }
+  .rec-section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
 
-  .rec-title {
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: var(--text);
-    margin-bottom: 0.5rem;
-    line-height: 1.4;
-  }
-  .rec-body {
-    font-size: 0.78rem;
-    color: var(--muted);
-    line-height: 1.6;
-  }
-  .rec-code {
-    font-family: var(--font-mono);
-    font-size: 0.7rem;
-    background: var(--bg3);
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    padding: 0.5rem 0.75rem;
-    margin-top: 0.75rem;
-    color: var(--green);
-    line-height: 1.5;
-    white-space: pre-wrap;
-  }
+  /* ── SVG animation keyframes ── */
+  @keyframes lineDraw   { from { stroke-dashoffset: var(--len, 600); } to { stroke-dashoffset: 0; } }
+  @keyframes fadeIn     { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes fadeInBox  { from { opacity: 0; transform: scale(0.92); } to { opacity: 1; transform: scale(1); } }
 
-  .rec-section-title {
-    font-family: var(--font-mono);
-    font-size: 0.7rem;
-    color: var(--muted);
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    margin: 2rem 0 1rem;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-  }
-  .rec-section-title::after {
-    content: '';
-    flex: 1;
-    height: 1px;
-    background: var(--border);
-  }
-
-  /* Legend */
-  .legend {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 1rem;
-    margin-bottom: 1.5rem;
-    padding: 0.75rem 1rem;
-    background: var(--bg3);
-    border-radius: 6px;
-    border: 1px solid var(--border);
-  }
-  .legend-item {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-family: var(--font-mono);
-    font-size: 0.65rem;
-    color: var(--muted);
-  }
-  .legend-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-  }
-
-  /* Replay button */
-  .btn-replay {
-    font-family: var(--font-mono);
-    font-size: 0.7rem;
-    color: var(--accent);
-    border: 1px solid rgba(79,158,255,0.3);
-    background: rgba(79,158,255,0.06);
-    border-radius: 4px;
-    padding: 4px 12px;
-    cursor: pointer;
-    float: right;
-    margin-bottom: 1rem;
-    transition: all 0.2s;
-  }
-  .btn-replay:hover { background: rgba(79,158,255,0.12); }
+  .anim-line { animation: lineDraw 0.45s ease forwards; }
+  .anim-fade { animation: fadeIn 0.25s ease forwards; }
+  .anim-box  { animation: fadeInBox 0.3s ease forwards; transform-box: fill-box; transform-origin: center; }
 </style>
 </head>
 <body>
 <div class="page">
-
   <header class="header">
     <h1>AqarGPT</h1>
     <span>pipeline architecture</span>
@@ -342,572 +79,556 @@
 
   <div class="tabs">
     <button class="tab active" onclick="switchTab('seq')">sequence diagram</button>
-    <button class="tab" onclick="switchTab('sm')">state machine</button>
-    <button class="tab" onclick="switchTab('rec')">recommendations</button>
+    <button class="tab"        onclick="switchTab('sm')">state machine</button>
+    <button class="tab"        onclick="switchTab('rec')">recommendations</button>
   </div>
 
-  <!-- ═══════════════════════════════════════════════════════════ SEQUENCE -->
+  <!-- SEQUENCE -->
   <div id="tab-seq" class="tab-panel active">
     <div class="legend">
-      <div class="legend-item"><div class="legend-dot" style="background:#4f9eff"></div> HTTP / REST</div>
-      <div class="legend-item"><div class="legend-dot" style="background:#22d3a0"></div> Pipeline phase</div>
-      <div class="legend-item"><div class="legend-dot" style="background:#f59e0b"></div> AI / Gemini</div>
-      <div class="legend-item"><div class="legend-dot" style="background:#a855f7"></div> WhatsApp Cloud</div>
-      <div class="legend-item"><div class="legend-dot" style="background:#f43f5e"></div> Guard / error</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#a855f7"></div>User / WA</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#4f9eff"></div>Webhook / REST</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#22d3a0"></div>Pipeline phase</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#f59e0b"></div>AI / Gemini</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#6b7280"></div>DB / Session</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#f43f5e"></div>Guard / error</div>
     </div>
     <button class="btn-replay" onclick="replaySeq()">↺ replay</button>
     <div style="clear:both"></div>
-    <div class="seq-container">
-      <div class="seq-svg-wrap" id="seqWrap"></div>
-    </div>
+    <div class="diagram-wrap"><div id="seqWrap"></div></div>
   </div>
 
-  <!-- ═══════════════════════════════════════════════════════════ STATE MACHINE -->
+  <!-- STATE MACHINE -->
   <div id="tab-sm" class="tab-panel">
     <div class="legend">
-      <div class="legend-item"><div class="legend-dot" style="background:#4f9eff"></div> Phase 1–2 (onboarding)</div>
-      <div class="legend-item"><div class="legend-dot" style="background:#22d3a0"></div> Phase 3–4 (context)</div>
-      <div class="legend-item"><div class="legend-dot" style="background:#f59e0b"></div> AI search</div>
-      <div class="legend-item"><div class="legend-dot" style="background:#a855f7"></div> Post-search</div>
-      <div class="legend-item"><div class="legend-dot" style="background:#f43f5e"></div> Error / reset</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#4f9eff"></div>Phase 1–2 (onboarding)</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#22d3a0"></div>Phase 3–4 (context)</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#f59e0b"></div>AI search</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#a855f7"></div>Post-search</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#f43f5e"></div>Error / reset</div>
     </div>
     <button class="btn-replay" onclick="replaySM()">↺ animate</button>
     <div style="clear:both"></div>
-    <div class="sm-container">
-      <div id="smWrap"></div>
-    </div>
+    <div class="diagram-wrap"><div id="smWrap"></div></div>
   </div>
 
-  <!-- ═══════════════════════════════════════════════════════════ RECOMMENDATIONS -->
+  <!-- RECOMMENDATIONS -->
   <div id="tab-rec" class="tab-panel">
     <div class="rec-section-title">architecture issues</div>
     <div class="rec-grid">
-
       <div class="rec-card critical">
         <span class="rec-tag critical">critical</span>
         <div class="rec-title">Duplicated webhook handlers</div>
-        <div class="rec-body">
-          <code>WhatsAppWebhookView</code> and <code>WhatsAppPipelineWebhookView</code> share ~80% identical logic (reset triggers, pagination, session expiry, greeting intercepts). A single bug fix must be applied twice, causing drift.
-        </div>
-        <div class="rec-code">
-# Merge into one view; extract shared logic:
-class BaseWhatsAppHandler:
+        <div class="rec-body"><code>WhatsAppWebhookView</code> and <code>WhatsAppPipelineWebhookView</code> share ~80% identical logic. A single bug fix must be applied twice, causing drift.</div>
+        <div class="rec-code">class BaseWhatsAppHandler:
     def handle_reset(self, sender, conv): ...
     def handle_pagination(self, sender, conv): ...
-    def handle_greeting(self, sender, conv): ...
-        </div>
+    def handle_greeting(self, sender, conv): ...</div>
       </div>
-
       <div class="rec-card critical">
         <span class="rec-tag critical">critical</span>
         <div class="rec-title">Dangling try block (dead code)</div>
-        <div class="rec-body">
-          In <code>WhatsAppPipelineWebhookView._handle_incoming</code> around line ~800, there is a bare <code>try:</code> block with indented code but no matching conditional — the pagination handler was refactored but the old try/except orphan was left behind. This will silently run the wrong branch.
-        </div>
-        <div class="rec-code">
-# Around "── Old handlers removed ──" comment:
-# The indented `try:` block calls _generate_ai_response
-# but has no triggering condition — remove or wrap:
-if False:  # TODO: remove this dead block entirely
-    try: ...
-        </div>
+        <div class="rec-body">In <code>WhatsAppPipelineWebhookView._handle_incoming</code> near the "Old handlers removed" comment, a bare <code>try:</code> block with no condition will silently run the wrong branch.</div>
+        <div class="rec-code"># Around "── Old handlers removed ──":
+# Indented try: calls _generate_ai_response
+# but has no triggering condition — remove entirely</div>
       </div>
-
       <div class="rec-card critical">
         <span class="rec-tag critical">critical</span>
-        <div class="rec-title">god-function _generate_ai_response</div>
-        <div class="rec-body">
-          This 300+ line function embeds a full QA flow, Gemini NLU, regex fallbacks, session management, and result routing. It cannot be tested in isolation, and any change risks breaking all downstream consumers (web chat, WA webhook, expand-search).
-        </div>
-        <div class="rec-code">
-# Split into testable units:
-class QAOrchestrator:         # mandatory Q flow
-class EntityExtractor:        # Gemini + regex NLU
-class SessionQueryBuilder:    # composed query
-# _generate_ai_response becomes a thin coordinator
-        </div>
+        <div class="rec-title">God-function _generate_ai_response</div>
+        <div class="rec-body">300+ lines embedding a full QA flow, Gemini NLU, regex fallbacks, session management, and result routing. Cannot be tested in isolation.</div>
+        <div class="rec-code">class QAOrchestrator:    # mandatory Q flow
+class EntityExtractor:   # Gemini + regex NLU
+class SessionQueryBuilder: # composed query
+# thin coordinator replaces the god-function</div>
       </div>
-
       <div class="rec-card warning">
         <span class="rec-tag warning">warning</span>
-        <div class="rec-title">Dual pagination storage (session + DB)</div>
-        <div class="rec-body">
-          Search results are written to both <code>session_data["wa_pagination_state"]</code> (Redis/cache) AND <code>ConversationPipelineSession.search_results_json</code> (Postgres). When they diverge the user gets inconsistent "load more" results. The session copy is the one used on the web channel; the DB copy is used on WhatsApp.
-        </div>
-        <div class="rec-code">
-# Choose one source of truth:
-# Option A: always use DB (ConversationPipelineSession)
-# Option B: always use session cache
-# Remove the other write path entirely
-        </div>
+        <div class="rec-title">Dual pagination storage</div>
+        <div class="rec-body">Results written to both <code>session_data["wa_pagination_state"]</code> (cache) and <code>ConversationPipelineSession.search_results_json</code> (DB). Divergence causes inconsistent "load more" results.</div>
+        <div class="rec-code"># Choose one source of truth:
+# Option A: always DB (ConversationPipelineSession)
+# Option B: always session cache
+# Remove the other write path entirely</div>
       </div>
-
       <div class="rec-card warning">
         <span class="rec-tag warning">warning</span>
-        <div class="rec-title">Phase 7 silently skipped on WhatsApp</div>
-        <div class="rec-body">
-          Both WA webhooks detect <code>QUERY_BUILDER</code> phase and force-advance to <code>RESULTS</code>. This is correct for UX, but the check happens after <code>orch.process()</code> which may have already side-effected the DB. The skip should be a pre-process guard, not a post-hoc repair.
-        </div>
-        <div class="rec-code">
-# In PipelineOrchestrator.process():
+        <div class="rec-title">Phase 7 skipped via post-hoc repair</div>
+        <div class="rec-body">Both WA webhooks detect <code>QUERY_BUILDER</code> phase after <code>orch.process()</code> has already side-effected the DB. The skip should be a pre-process guard.</div>
+        <div class="rec-code"># In PipelineOrchestrator.process():
 if self.is_whatsapp and phase == QUERY_BUILDER:
     self.session.current_phase = RESULTS
     return PhaseResult(handled=False)
-# Not: check after process() and overwrite
-        </div>
+# Not: check after process() and overwrite</div>
       </div>
-
+      <div class="rec-card warning">
+        <span class="rec-tag warning">warning</span>
+        <div class="rec-title">Phase 3 Gemini call uncached</div>
+        <div class="rec-body"><code>_get_q3_2_suggestions()</code> calls Gemini synchronously on every Phase 3 entry. A timeout leaves the user with no budget prompt.</div>
+        <div class="rec-code">@lru_cache(maxsize=256)
+def _get_q3_2_suggestions(prop, city, goal, mn, mx):
+    ...
+# Or pre-compute for top-10 city/type combos</div>
+      </div>
       <div class="rec-card warning">
         <span class="rec-tag warning">warning</span>
         <div class="rec-title">Deep imports inside hot paths</div>
-        <div class="rec-body">
-          <code>from chat.models import ...</code>, <code>from chat.pipeline.orchestrator import ...</code>, etc. appear inside <code>_handle_incoming()</code> which runs on every WA message. Python caches imports, but the deep nested imports increase cold-start time and obscure the dependency graph.
-        </div>
-        <div class="rec-code">
-# Move all imports to module top-level:
+        <div class="rec-body"><code>from chat.models import ...</code> and other deep imports appear inside <code>_handle_incoming()</code> which runs on every WA message. Increases cold-start time and obscures the dependency graph.</div>
+        <div class="rec-code"># Move all to module top-level:
 from chat.models import (
     ChatConversation, ChatMessage,
     ConversationPipelineSession, PipelinePhase
-)
-# Inside method: only local computation imports
-        </div>
+)</div>
       </div>
-
-      <div class="rec-card warning">
-        <span class="rec-tag warning">warning</span>
-        <div class="rec-title">Phase 3 Gemini call is synchronous + blocking</div>
-        <div class="rec-body">
-          <code>_get_q3_2_suggestions()</code> calls Gemini on every Phase 3 entry to generate price suggestions. If Gemini times out or returns an error, the user gets no budget prompt. The fallback exists but the Gemini call is not cached.
-        </div>
-        <div class="rec-code">
-# Cache suggestions by (property_type, city, goal):
-@lru_cache(maxsize=256)
-def _get_q3_2_suggestions(prop, city, goal, mn, mx):
-    ...
-# Or pre-compute for top-10 city/type combos at startup
-        </div>
-      </div>
-
       <div class="rec-card info">
         <span class="rec-tag info">info</span>
-        <div class="rec-title">_RESET_TRIGGERS and _GREETING_TRIGGERS duplicated</div>
-        <div class="rec-body">
-          Both webhook views define identical <code>frozenset</code> constants inline. Any new greeting word must be added in two places.
-        </div>
-        <div class="rec-code">
-# chat/constants.py
+        <div class="rec-title">Trigger sets duplicated across two views</div>
+        <div class="rec-body">Both webhook views define identical <code>frozenset</code> constants for reset and greeting triggers inline. New words must be added in two places.</div>
+        <div class="rec-code"># chat/constants.py
 WA_RESET_TRIGGERS = frozenset({"ابدأ", "reset", ...})
-WA_GREETING_TRIGGERS = frozenset({"سلام", "hi", ...})
-        </div>
+WA_GREETING_TRIGGERS = frozenset({"سلام", "hi", ...})</div>
       </div>
-
       <div class="rec-card info">
         <span class="rec-tag info">info</span>
-        <div class="rec-title">logger.warning used for INFO-level logs</div>
-        <div class="rec-body">
-          Throughout both webhooks, diagnostic messages like <code>[PAGINATION-DEBUG]</code>, <code>[WA-CACHE]</code>, <code>[WA-MESSAGE-START]</code> use <code>logger.warning()</code> rather than <code>logger.info()</code> or <code>logger.debug()</code>. This pollutes warning-level monitoring alerts.
-        </div>
-        <div class="rec-code">
-logger.debug("[PAGINATION-DEBUG] offset=%d", offset)
+        <div class="rec-title">logger.warning used for debug logs</div>
+        <div class="rec-body">Diagnostic messages like <code>[PAGINATION-DEBUG]</code> and <code>[WA-CACHE]</code> use <code>logger.warning()</code>, polluting warning-level monitoring alerts.</div>
+        <div class="rec-code">logger.debug("[PAGINATION-DEBUG] offset=%d", offset)
 logger.info("[WA-CACHE] cached %d results", n)
-# Reserve logger.warning() for actual unexpected states
-        </div>
+# Reserve logger.warning() for actual anomalies</div>
       </div>
-
       <div class="rec-card info">
         <span class="rec-tag info">info</span>
-        <div class="rec-title">No test coverage entry points visible</div>
-        <div class="rec-body">
-          The phase handlers (Phase1Handler, Phase2Handler, etc.) are cleanly instantiable, but <code>_generate_ai_response</code> and <code>_handle_incoming</code> depend on DB, Redis, and Gemini with no injectable fakes. Adding factory fixtures for <code>ConversationPipelineSession</code> would unlock unit testing.
-        </div>
-        <div class="rec-code">
-# conftest.py
-@pytest.fixture
+        <div class="rec-title">No test fixtures visible</div>
+        <div class="rec-body">Phase handlers are cleanly instantiable, but <code>_generate_ai_response</code> and <code>_handle_incoming</code> depend on DB, Redis, and Gemini with no injectable fakes.</div>
+        <div class="rec-code">@pytest.fixture
 def pipeline_session(db):
     conv = ChatConversation.objects.create()
     return ConversationPipelineSession.objects.create(
         conversation=conv, current_phase=1
-    )
-        </div>
+    )</div>
       </div>
-
       <div class="rec-card good">
         <span class="rec-tag good">good</span>
-        <div class="rec-title">Phase handlers are clean and well-structured</div>
-        <div class="rec-body">
-          Phases 1–4 and 7 each have a single-responsibility <code>handle(session, user_text)</code> entry point, clear state transitions, and good fallback behavior. The PhaseResult dataclass makes return types explicit.
-        </div>
+        <div class="rec-title">Phase handlers are clean</div>
+        <div class="rec-body">Phases 1–4 and 7 each have a single-responsibility <code>handle(session, user_text)</code> entry point, clear state transitions, and explicit <code>PhaseResult</code> return types.</div>
       </div>
-
       <div class="rec-card good">
         <span class="rec-tag good">good</span>
         <div class="rec-title">Dedup guard prevents double-processing</div>
-        <div class="rec-body">
-          <code>mark_message_processed(message_id)</code> is called before any logic runs, preventing WhatsApp retry storms from triggering duplicate AI calls and DB writes. Good resilience pattern.
-        </div>
+        <div class="rec-body"><code>mark_message_processed(message_id)</code> fires before any logic, preventing WhatsApp retry storms from triggering duplicate AI calls and DB writes.</div>
       </div>
-
       <div class="rec-card good">
         <span class="rec-tag good">good</span>
-        <div class="rec-title">Pagination persisted in DB for durability</div>
-        <div class="rec-body">
-          Storing sorted search results in <code>ConversationPipelineSession.search_results_json</code> means pagination survives process restarts and Redis eviction. The sort-before-store pattern ensures consistent page ordering.
-        </div>
+        <div class="rec-title">Pagination persisted in DB</div>
+        <div class="rec-body">Storing sorted results in <code>search_results_json</code> means pagination survives process restarts. Sort-before-store ensures consistent page ordering.</div>
       </div>
-
     </div>
-
     <div class="rec-section-title">quick wins</div>
     <div class="rec-grid">
       <div class="rec-card info">
         <span class="rec-tag info">refactor</span>
         <div class="rec-title">Extract _send_suggestions_wa to shared utility</div>
-        <div class="rec-body">Move out of module-level scope into <code>chat/whatsapp_helpers.py</code> so both webhook views can import it without circular deps.</div>
+        <div class="rec-body">Move to <code>chat/whatsapp_helpers.py</code> so both webhook views import it without circular deps.</div>
       </div>
       <div class="rec-card info">
         <span class="rec-tag info">perf</span>
         <div class="rec-title">Use select_related on pipeline session lookups</div>
-        <div class="rec-body">Every <code>ConversationPipelineSession.objects.filter(conversation=conv).first()</code> fires a separate query. Use <code>select_related('pipeline_session')</code> when loading <code>ChatConversation</code>.</div>
+        <div class="rec-body">Every <code>filter(conversation=conv).first()</code> fires a separate query. Use <code>select_related('pipeline_session')</code> when loading <code>ChatConversation</code>.</div>
         <div class="rec-code">conv = ChatConversation.objects.select_related(
     'pipeline_session'
 ).get(wa_phone=sender)</div>
       </div>
       <div class="rec-card info">
         <span class="rec-tag info">dx</span>
-        <div class="rec-title">Add WhatsApp status endpoint to OpenAPI schema</div>
-        <div class="rec-body"><code>WhatsAppStatusView</code> is a great debug tool but is not documented. Add a docstring-based schema so it appears in Swagger/Redoc.</div>
+        <div class="rec-title">Document WhatsAppStatusView in OpenAPI</div>
+        <div class="rec-body">Great debug tool but undocumented. Add a docstring-based schema so it appears in Swagger/Redoc.</div>
       </div>
     </div>
   </div>
-
 </div>
 
 <script>
-// ─── Tab switching ──────────────────────────────────────────────────────────
+// ── Tab switching ────────────────────────────────────────────────────────────
 function switchTab(name) {
-  document.querySelectorAll('.tab').forEach((t, i) => {
-    const names = ['seq','sm','rec'];
-    t.classList.toggle('active', names[i] === name);
+  ['seq','sm','rec'].forEach((n, i) => {
+    document.querySelectorAll('.tab')[i].classList.toggle('active', n === name);
+    document.getElementById('tab-'+n).classList.toggle('active', n === name);
   });
-  document.querySelectorAll('.tab-panel').forEach(p => {
-    p.classList.toggle('active', p.id === 'tab-' + name);
+  if (name === 'sm')  renderSM();
+  if (name === 'seq') renderSeq();
+}
+
+// ── helpers ──────────────────────────────────────────────────────────────────
+function el(tag, attrs={}, ...children) {
+  const e = document.createElementNS('http://www.w3.org/2000/svg', tag);
+  for (const [k,v] of Object.entries(attrs)) e.setAttribute(k, v);
+  for (const c of children) {
+    if (typeof c === 'string') e.textContent = c;
+    else if (c) e.appendChild(c);
+  }
+  return e;
+}
+function animLine(elem, len, delay) {
+  elem.style.cssText += `stroke-dasharray:${len};stroke-dashoffset:${len};opacity:1;animation:lineDraw 0.45s ${delay}ms ease forwards;`;
+}
+function animFade(elem, delay) {
+  elem.style.cssText += `opacity:0;animation:fadeIn 0.3s ${delay}ms ease forwards;`;
+}
+function animBox(elem, delay) {
+  elem.style.cssText += `opacity:0;animation:fadeInBox 0.35s ${delay}ms ease forwards;`;
+}
+
+// ═══════════════════════════════════════════════════════ STATE MACHINE ═══════
+const SM = {
+  // [id, label line1, label line2, row, col, color]
+  states: [
+    ['start',   '⬤',              '',               0, 2, '#4f9eff'],
+    ['s1',      'Phase 1',        'Ask persona',    1, 0, '#4f9eff'],
+    ['s1b',     'Phase 1',        'Ask name',       1, 2, '#4f9eff'],
+    ['s2',      'Phase 2',        'Ask city',       1, 4, '#22d3a0'],
+    ['s2g',     'Phase 2',        'Ask goal',       2, 4, '#22d3a0'],
+    ['s2t',     'Phase 2',        'Ask type',       2, 2, '#22d3a0'],
+    ['s3',      'Phase 3',        'Context merge',  3, 2, '#22d3a0'],
+    ['s3b',     'Phase 3',        'Budget input',   3, 0, '#22d3a0'],
+    ['s4',      'Phase 4',        'Persona detail', 4, 2, '#22d3a0'],
+    ['ai',      'AI Search',      'Gemini',         5, 2, '#f59e0b'],
+    ['nores',   'No results',     '',               5, 4, '#f43f5e'],
+    ['res',     'Show results',   '+pagination',    6, 2, '#a855f7'],
+    ['more',    'Load more',      'offset+3',       7, 0, '#a855f7'],
+    ['compare', 'Compare link',   '',               7, 2, '#a855f7'],
+    ['expand',  'Expand search',  'relaxed filters',7, 4, '#f59e0b'],
+    ['done',    '■',              'reset / new',    8, 2, '#6b7280'],
+  ],
+  // [from, to, label, color, bend] bend: 0=straight, +/-N = curve offset
+  edges: [
+    ['start','s1',   'new user',          '#4f9eff',  -30],
+    ['start','s2',   'returning',         '#22d3a0',   30],
+    ['s1',   's1b',  'persona set',       '#4f9eff',    0],
+    ['s1b',  's2',   'name captured',     '#4f9eff',    0],
+    ['s2',   's2g',  'city given',        '#22d3a0',    0],
+    ['s2g',  's2t',  'goal given',        '#22d3a0',    0],
+    ['s2t',  's3',   'type given',        '#22d3a0',    0],
+    ['s3',   's3b',  'need budget',       '#22d3a0',    0],
+    ['s3b',  's4',   'budget set',        '#22d3a0',   40],
+    ['s3',   's4',   'skip budget',       '#22d3a0',    0],
+    ['s4',   'ai',   'phase 4 done',      '#f59e0b',    0],
+    ['ai',   'res',  'results found',     '#a855f7',    0],
+    ['ai',   'nores','zero results',      '#f43f5e',    0],
+    ['nores','expand','وسّع البحث',       '#f59e0b',    0],
+    ['expand','ai',  'retry',             '#f59e0b',   60],
+    ['res',  'more', 'عروض اكثر',         '#a855f7',    0],
+    ['res',  'compare','قارن',            '#a855f7',    0],
+    ['res',  'expand','expand search',    '#f59e0b',   40],
+    ['more', 'more', 'next batch',        '#a855f7',   'self'],
+    ['more', 'done', 'end',               '#6b7280',    0],
+    ['compare','done','done',             '#6b7280',    0],
+    ['res',  'done', 'new search',        '#6b7280',    0],
+    ['s2',   's2',   'city unclear',      '#f43f5e',   'self'],
+  ],
+};
+
+const SM_CW = 160, SM_RH = 95, SM_BW = 118, SM_BH = 50;
+const SM_OX = 55, SM_OY = 40;
+
+function smXY(row, col) {
+  const cx = SM_OX + col * SM_CW + SM_CW/2;
+  const cy = SM_OY + row * SM_RH + SM_BH/2;
+  return { cx, cy, x: cx - SM_BW/2, y: SM_OY + row * SM_RH };
+}
+
+let smRendered = false;
+function renderSM(force) {
+  if (smRendered && !force) return;
+  smRendered = true;
+  const wrap = document.getElementById('smWrap');
+  wrap.innerHTML = '';
+
+  const maxRow = Math.max(...SM.states.map(s => s[3]));
+  const W = SM_OX*2 + SM_CW*5;
+  const H = SM_OY*2 + (maxRow+1)*SM_RH + 10;
+
+  const svg = el('svg', { width: '100%', viewBox: `0 0 ${W} ${H}` });
+
+  // defs / markers
+  const defs = el('defs');
+  const colors = [...new Set(SM.edges.map(e => e[3]))];
+  colors.forEach(c => {
+    const mid = el('marker', { id:'m-'+c.slice(1), viewBox:'0 0 10 10', refX:'8', refY:'5', markerWidth:'6', markerHeight:'6', orient:'auto-start-reverse' });
+    mid.appendChild(el('path', { d:'M2 1L8 5L2 9', fill:'none', stroke:c, 'stroke-width':'1.5', 'stroke-linecap':'round', 'stroke-linejoin':'round' }));
+    defs.appendChild(mid);
   });
-  if (name === 'seq') buildSeq();
-  if (name === 'sm')  buildSM();
+  svg.appendChild(defs);
+
+  // build state lookup
+  const smap = {};
+  SM.states.forEach(s => { smap[s[0]] = s; });
+
+  // ── draw edges first (below boxes) ──
+  let eDelay = 800;
+  SM.edges.forEach(([fid, tid, lbl, color, bend]) => {
+    const fs = smap[fid], ts = smap[tid];
+    if (!fs || !ts) return;
+    const fp = smXY(fs[3], fs[4]);
+    const tp = smXY(ts[3], ts[4]);
+    const mid2 = color.slice(1);
+
+    let pathD, lx, ly;
+
+    if (bend === 'self') {
+      const cx2 = fp.cx + 55, cy2 = fp.cy - 30;
+      pathD = `M${fp.cx} ${fp.y} Q${cx2} ${cy2} ${fp.cx+2} ${fp.y}`;
+      lx = fp.cx + 70; ly = fp.cy - 32;
+    } else {
+      // compute entry/exit points on box edges
+      let x1 = fp.cx, y1 = fp.cy, x2 = tp.cx, y2 = tp.cy;
+      const dx = tp.cx - fp.cx, dy = tp.cy - fp.cy;
+      const adx = Math.abs(dx), ady = Math.abs(dy);
+      if (ady > adx) {
+        // mostly vertical
+        y1 = dy > 0 ? fp.y + SM_BH : fp.y;
+        y2 = dy > 0 ? tp.y         : tp.y + SM_BH;
+      } else {
+        // mostly horizontal
+        x1 = dx > 0 ? fp.x + SM_BW : fp.x;
+        x2 = dx > 0 ? tp.x         : tp.x + SM_BW;
+      }
+      const mx = (x1+x2)/2, my = (y1+y2)/2;
+      if (bend && bend !== 0) {
+        const nx = -(y2-y1), ny = x2-x1;
+        const len = Math.sqrt(nx*nx+ny*ny) || 1;
+        const bx = mx + (nx/len)*bend, by = my + (ny/len)*bend;
+        pathD = `M${x1} ${y1} Q${bx} ${by} ${x2} ${y2}`;
+        lx = bx; ly = by - 4;
+      } else {
+        pathD = `M${x1} ${y1} L${x2} ${y2}`;
+        lx = mx; ly = my - 6;
+      }
+    }
+
+    const pathLen = 400;
+    const path = el('path', { d: pathD, fill:'none', stroke:color, 'stroke-width':'1.3', 'marker-end':`url(#m-${mid2})`, 'stroke-dasharray': pathLen, 'stroke-dashoffset': pathLen });
+    path.style.animation = `lineDraw 0.5s ${eDelay}ms ease forwards`;
+    svg.appendChild(path);
+
+    const txt = el('text', { x: lx, y: ly, 'text-anchor':'middle' }, lbl);
+    txt.style.cssText = `font-family:'IBM Plex Mono',monospace;font-size:9px;fill:${color};opacity:0;animation:fadeIn 0.2s ${eDelay+420}ms ease forwards`;
+    svg.appendChild(txt);
+
+    eDelay += 70;
+  });
+
+  // ── draw state boxes ──
+  let sDelay = 100;
+  SM.states.forEach(([id, l1, l2, row, col, color]) => {
+    const p = smXY(row, col);
+    const isCircle = l1 === '⬤' || l1 === '■';
+    const g = el('g');
+
+    if (isCircle) {
+      const circle = el('circle', { cx: p.cx, cy: p.cy, r: '16', fill: color });
+      animBox(circle, sDelay);
+      g.appendChild(circle);
+      const sym = el('text', { x: p.cx, y: p.cy+5, 'text-anchor':'middle' }, l1 === '⬤' ? '●' : '■');
+      sym.style.cssText = `font-size:20px;fill:white;opacity:0;animation:fadeIn 0.2s ${sDelay+250}ms ease forwards`;
+      g.appendChild(sym);
+      if (l2) {
+        const sub = el('text', { x: p.cx, y: p.cy+32, 'text-anchor':'middle' }, l2);
+        sub.style.cssText = `font-family:'IBM Plex Mono',monospace;font-size:8px;fill:#6b7280;opacity:0;animation:fadeIn 0.2s ${sDelay+260}ms ease forwards`;
+        g.appendChild(sub);
+      }
+    } else {
+      const rect = el('rect', { x: p.x, y: p.y, width: SM_BW, height: SM_BH, rx:'6', fill:'#181c24', stroke: color, 'stroke-width':'1' });
+      animBox(rect, sDelay);
+      g.appendChild(rect);
+
+      const t1 = el('text', { x: p.cx, y: l2 ? p.cy-7 : p.cy+4, 'text-anchor':'middle' }, l1);
+      t1.style.cssText = `font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:500;fill:${color};opacity:0;animation:fadeIn 0.2s ${sDelay+250}ms ease forwards`;
+      g.appendChild(t1);
+
+      if (l2) {
+        const t2 = el('text', { x: p.cx, y: p.cy+9, 'text-anchor':'middle' }, l2);
+        t2.style.cssText = `font-family:'IBM Plex Mono',monospace;font-size:9px;fill:#9ca3af;opacity:0;animation:fadeIn 0.2s ${sDelay+260}ms ease forwards`;
+        g.appendChild(t2);
+      }
+    }
+    svg.appendChild(g);
+    sDelay += 55;
+  });
+
+  wrap.appendChild(svg);
 }
+function replaySM() { smRendered = false; renderSM(true); }
 
-// ─── SEQUENCE DIAGRAM ───────────────────────────────────────────────────────
-const ACTORS = [
-  { id: 'user',    label: 'User / WhatsApp', color: '#a855f7' },
-  { id: 'wh',     label: 'WA Webhook',       color: '#4f9eff' },
-  { id: 'pipe',   label: 'Pipeline Orch.',   color: '#22d3a0' },
-  { id: 'phase',  label: 'Phase Handler',    color: '#22d3a0' },
-  { id: 'ai',     label: 'AI / Gemini',      color: '#f59e0b' },
-  { id: 'db',     label: 'DB / Session',     color: '#6b7280' },
-];
+// ═══════════════════════════════════════════════════════ SEQUENCE DIAGRAM ════
+const SEQ = {
+  actors: [
+    { label: 'User/WA',       color: '#a855f7' },
+    { label: 'WA Webhook',    color: '#4f9eff' },
+    { label: 'Pipeline Orch', color: '#22d3a0' },
+    { label: 'Phase Handler', color: '#22d3a0' },
+    { label: 'AI/Gemini',     color: '#f59e0b' },
+    { label: 'DB/Session',    color: '#6b7280' },
+  ],
+  // type: band | msg | ret | self
+  messages: [
+    { type:'band', label:'RECEIVE & DEDUP', color:'rgba(79,158,255,0.08)', bc:'rgba(79,158,255,0.3)' },
+    { type:'msg',  from:0, to:1, label:'POST /wa  (incoming message)',   color:'#a855f7' },
+    { type:'msg',  from:1, to:5, label:'mark_message_processed(id)',     color:'#4f9eff' },
+    { type:'ret',  from:5, to:1, label:'→ ok / already seen',            color:'#6b7280' },
+    { type:'msg',  from:1, to:0, label:'mark_as_read  +  typing bubble', color:'#a855f7' },
 
-const MESSAGES = [
-  // Phase band: Receive & dedup
-  { type:'band', label:'RECEIVE + DEDUP', color:'rgba(79,158,255,0.06)', borderColor:'rgba(79,158,255,0.25)' },
-  { from:0, to:1, label:'POST /wa (message)',        color:'#a855f7', style:'solid' },
-  { from:1, to:5, label:'mark_message_processed()',  color:'#4f9eff', style:'dashed' },
-  { from:5, to:1, label:'→ ok / duplicate',          color:'#6b7280', style:'dashed', ret:true },
-  { from:1, to:0, label:'mark_as_read + typing',     color:'#a855f7', style:'dashed' },
+    { type:'band', label:'GUARD CHECKS', color:'rgba(244,63,94,0.06)', bc:'rgba(244,63,94,0.3)' },
+    { type:'self', on:1,          label:'reset? greeting? pagination?',  color:'#f43f5e' },
+    { type:'msg',  from:1, to:5, label:'load ConversationPipelineSession', color:'#4f9eff' },
+    { type:'ret',  from:5, to:1, label:'→ session row',                  color:'#6b7280' },
 
-  // Phase band: Guard checks
-  { type:'band', label:'GUARD CHECKS', color:'rgba(244,63,94,0.05)', borderColor:'rgba(244,63,94,0.2)' },
-  { from:1, to:1, label:'reset? greeting? pagination?', color:'#f43f5e', style:'self' },
-  { from:1, to:5, label:'load ConversationPipelineSession', color:'#4f9eff', style:'dashed' },
-  { from:5, to:1, label:'→ session row',             color:'#6b7280', style:'dashed', ret:true },
+    { type:'band', label:'PIPELINE PHASES 1–4', color:'rgba(34,211,160,0.06)', bc:'rgba(34,211,160,0.3)' },
+    { type:'msg',  from:1, to:2, label:'PipelineOrchestrator.process(text)', color:'#22d3a0' },
+    { type:'msg',  from:2, to:3, label:'phase1.handle() / phase2.handle()',  color:'#22d3a0' },
+    { type:'msg',  from:3, to:5, label:'save phase flags to DB',         color:'#22d3a0' },
+    { type:'ret',  from:3, to:2, label:'→ PhaseResult(handled=True)',    color:'#22d3a0' },
+    { type:'ret',  from:2, to:1, label:'→ pipeline question + buttons',  color:'#22d3a0' },
+    { type:'msg',  from:1, to:0, label:'send_message(question, buttons)', color:'#a855f7' },
 
-  // Phase band: Pipeline
-  { type:'band', label:'PIPELINE PHASES 1–4', color:'rgba(34,211,160,0.05)', borderColor:'rgba(34,211,160,0.2)' },
-  { from:1, to:2, label:'PipelineOrchestrator.process(text)', color:'#22d3a0', style:'solid' },
-  { from:2, to:3, label:'phase1.handle() / phase2.handle()', color:'#22d3a0', style:'solid' },
-  { from:3, to:5, label:'save phase flags',          color:'#22d3a0', style:'dashed' },
-  { from:3, to:2, label:'→ PhaseResult(handled=True)', color:'#22d3a0', style:'dashed', ret:true },
-  { from:2, to:1, label:'→ pipeline question',       color:'#22d3a0', style:'dashed', ret:true },
-  { from:1, to:0, label:'send_message(question, buttons)', color:'#a855f7', style:'solid' },
+    { type:'band', label:'AI SEARCH (all phases complete)', color:'rgba(245,158,11,0.06)', bc:'rgba(245,158,11,0.3)' },
+    { type:'ret',  from:2, to:1, label:'→ PhaseResult(handled=False)',   color:'#22d3a0' },
+    { type:'self', on:1,          label:'build_ai_context()',            color:'#4f9eff' },
+    { type:'msg',  from:1, to:4, label:'_generate_ai_response()',        color:'#f59e0b' },
+    { type:'msg',  from:4, to:5, label:'load_session()',                 color:'#f59e0b' },
+    { type:'self', on:4,          label:'process_user_message() → Gemini', color:'#f59e0b' },
+    { type:'msg',  from:4, to:5, label:'save_session(results)',          color:'#f59e0b' },
+    { type:'ret',  from:4, to:1, label:'→ (ai_text, listings, intent)',  color:'#f59e0b' },
 
-  // Phase band: AI search
-  { type:'band', label:'AI SEARCH (phase complete)', color:'rgba(245,158,11,0.05)', borderColor:'rgba(245,158,11,0.2)' },
-  { from:2, to:1, label:'→ PhaseResult(handled=False)', color:'#22d3a0', style:'dashed', ret:true },
-  { from:1, to:1, label:'build_ai_context()',        color:'#4f9eff', style:'self' },
-  { from:1, to:4, label:'_generate_ai_response()',   color:'#f59e0b', style:'solid' },
-  { from:4, to:5, label:'load_session()',            color:'#f59e0b', style:'dashed' },
-  { from:4, to:4, label:'process_user_message() → Gemini', color:'#f59e0b', style:'self' },
-  { from:4, to:5, label:'save_session(results)',     color:'#f59e0b', style:'dashed' },
-  { from:4, to:1, label:'→ (ai_text, listings, intent)', color:'#f59e0b', style:'dashed', ret:true },
+    { type:'band', label:'SEND RESULTS', color:'rgba(168,85,247,0.06)', bc:'rgba(168,85,247,0.3)' },
+    { type:'msg',  from:1, to:5, label:'save search_results_json + offset=0', color:'#4f9eff' },
+    { type:'msg',  from:1, to:0, label:'send_property_cards_wa()  [batch 0–3]', color:'#a855f7' },
+    { type:'msg',  from:1, to:0, label:'send_message(عروض اكثر / قارن / جديد)', color:'#a855f7' },
 
-  // Phase band: Results
-  { type:'band', label:'SEND RESULTS', color:'rgba(168,85,247,0.05)', borderColor:'rgba(168,85,247,0.2)' },
-  { from:1, to:5, label:'save search_results_json + offset=0', color:'#4f9eff', style:'dashed' },
-  { from:1, to:0, label:'send_property_cards_wa() [batch 0..3]', color:'#a855f7', style:'solid' },
-  { from:1, to:0, label:'send_message(عروض اكثر / قارن / جديد)', color:'#a855f7', style:'solid' },
+    { type:'band', label:'PAGINATION', color:'rgba(79,158,255,0.05)', bc:'rgba(79,158,255,0.25)' },
+    { type:'msg',  from:0, to:1, label:'tap "عروض اكثر"',               color:'#a855f7' },
+    { type:'msg',  from:1, to:5, label:'load search_results_json',       color:'#4f9eff' },
+    { type:'ret',  from:5, to:1, label:'→ sorted results[]',             color:'#6b7280' },
+    { type:'msg',  from:1, to:5, label:'update pagination_offset',       color:'#4f9eff' },
+    { type:'msg',  from:1, to:0, label:'send_property_cards_wa()  [batch 3–6]', color:'#a855f7' },
+  ],
+};
 
-  // Phase band: Pagination
-  { type:'band', label:'PAGINATION', color:'rgba(79,158,255,0.04)', borderColor:'rgba(79,158,255,0.2)' },
-  { from:0, to:1, label:'tap "عروض اكثر"',           color:'#a855f7', style:'solid' },
-  { from:1, to:5, label:'load search_results_json',  color:'#4f9eff', style:'dashed' },
-  { from:5, to:1, label:'→ sorted results[]',        color:'#6b7280', style:'dashed', ret:true },
-  { from:1, to:5, label:'update pagination_offset',  color:'#4f9eff', style:'dashed' },
-  { from:1, to:0, label:'send_property_cards_wa() [batch 3..6]', color:'#a855f7', style:'solid' },
-];
+const ACT_W = 108, ACT_H = 34, ACT_Y = 20, MSG_H = 30, BAND_H = 22, SELF_H = 34;
+const SEQ_PAD = 16;
 
-let seqBuilt = false;
-function buildSeq() {
-  if (seqBuilt) return;
-  seqBuilt = true;
-  renderSeq();
-}
-function replaySeq() {
-  seqBuilt = false;
-  renderSeq();
-}
+let seqRendered = false;
+function renderSeq(force) {
+  if (seqRendered && !force) return;
+  seqRendered = true;
+  const wrap = document.getElementById('seqWrap');
+  wrap.innerHTML = '';
 
-function renderSeq() {
-  const W = 960, PAD = 20;
-  const AW = 130, AH = 36, AY = 50;
-  const BAND_H = 22, MSG_H = 28, SELF_H = 32;
-  const actorCount = ACTORS.length;
-  const colW = (W - PAD*2) / actorCount;
-  const cx = i => PAD + colW * i + colW/2;
+  const N = SEQ.actors.length;
+  const W = SEQ_PAD*2 + ACT_W*N + 12*(N-1);
+  const colW = (W - SEQ_PAD*2) / N;
+  const cx = i => SEQ_PAD + colW*i + colW/2;
 
-  // measure total height
-  let totalH = AY + AH + 20;
-  MESSAGES.forEach(m => {
-    if (m.type === 'band') totalH += BAND_H + 8;
-    else if (m.style === 'self') totalH += SELF_H;
+  // measure height
+  let totalH = ACT_Y + ACT_H + 16;
+  SEQ.messages.forEach(m => {
+    if (m.type === 'band') totalH += BAND_H + 6;
+    else if (m.type === 'self') totalH += SELF_H;
     else totalH += MSG_H;
   });
-  totalH += AH + 30;
+  totalH += ACT_H + 20;
 
-  let svgParts = [`<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${totalH}" viewBox="0 0 ${W} ${totalH}">`];
+  const svg = el('svg', { width: '100%', viewBox: `0 0 ${W} ${totalH}` });
+
+  // defs
+  const defs = el('defs');
+  const acols = [...new Set([...SEQ.actors.map(a=>a.color), ...SEQ.messages.filter(m=>m.color).map(m=>m.color)])];
+  acols.forEach(c => {
+    const mid = el('marker', { id:'sm-'+c.slice(1), viewBox:'0 0 10 10', refX:'8', refY:'5', markerWidth:'5', markerHeight:'5', orient:'auto-start-reverse' });
+    mid.appendChild(el('path', { d:'M2 1L8 5L2 9', fill:'none', stroke:c, 'stroke-width':'1.5', 'stroke-linecap':'round', 'stroke-linejoin':'round' }));
+    defs.appendChild(mid);
+  });
+  svg.appendChild(defs);
 
   // actor boxes top
-  ACTORS.forEach((a, i) => {
-    const x = cx(i) - AW/2;
-    svgParts.push(`<rect x="${x}" y="${AY}" width="${AW}" height="${AH}" rx="4" class="actor-box" style="fill:#181c24;stroke:${a.color};stroke-width:1;opacity:0.9"/>`);
-    svgParts.push(`<text x="${cx(i)}" y="${AY + AH/2 + 4}" text-anchor="middle" class="actor-text" style="fill:${a.color}">${a.label}</text>`);
+  SEQ.actors.forEach((a, i) => {
+    const x = cx(i) - ACT_W/2;
+    const g = el('g');
+    const box = el('rect', { x, y: ACT_Y, width: ACT_W, height: ACT_H, rx:'4', fill:'#181c24', stroke: a.color, 'stroke-width':'1' });
+    animBox(box, 80 + i*60);
+    g.appendChild(box);
+    const txt = el('text', { x: cx(i), y: ACT_Y+ACT_H/2+4, 'text-anchor':'middle' }, a.label);
+    txt.style.cssText = `font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:500;fill:${a.color};opacity:0;animation:fadeIn 0.2s ${80+i*60+250}ms ease forwards`;
+    g.appendChild(txt);
+    svg.appendChild(g);
   });
 
   // lifelines
-  ACTORS.forEach((a, i) => {
-    svgParts.push(`<line x1="${cx(i)}" y1="${AY+AH}" x2="${cx(i)}" y2="${totalH - AH - 20}" class="lifeline"/>`);
+  SEQ.actors.forEach((a, i) => {
+    const line = el('line', { x1: cx(i), y1: ACT_Y+ACT_H, x2: cx(i), y2: totalH-ACT_H-16, stroke:'rgba(255,255,255,0.07)', 'stroke-width':'1', 'stroke-dasharray':'3 4' });
+    svg.appendChild(line);
   });
 
   // messages
-  let y = AY + AH + 20;
-  let delayMs = 0;
-  const DELAY_STEP = 120;
+  let y = ACT_Y + ACT_H + 16;
+  let delay = 500;
 
-  MESSAGES.forEach((m, idx) => {
+  SEQ.messages.forEach(m => {
     if (m.type === 'band') {
-      svgParts.push(`<rect x="${PAD}" y="${y}" width="${W - PAD*2}" height="${BAND_H}" rx="3" style="fill:${m.color};stroke:${m.borderColor};stroke-width:0.5"/>`);
-      svgParts.push(`<text x="${PAD+10}" y="${y + BAND_H/2 + 3.5}" class="phase-label">${m.label}</text>`);
-      y += BAND_H + 8;
+      const bg = el('rect', { x: SEQ_PAD, y, width: W-SEQ_PAD*2, height: BAND_H, rx:'3', fill: m.color, stroke: m.bc, 'stroke-width':'0.5' });
+      svg.appendChild(bg);
+      const txt = el('text', { x: SEQ_PAD+8, y: y+BAND_H/2+4 }, m.label);
+      txt.style.cssText = `font-family:'IBM Plex Mono',monospace;font-size:8.5px;font-weight:600;fill:${m.bc};letter-spacing:0.06em`;
+      svg.appendChild(txt);
+      y += BAND_H + 6;
       return;
     }
 
-    const delay = delayMs + 'ms';
-    delayMs += DELAY_STEP;
-
-    if (m.style === 'self') {
-      const lx = cx(m.from);
-      const loop = `M${lx} ${y} Q${lx+40} ${y+16} ${lx} ${y+SELF_H}`;
-      svgParts.push(`<path d="${loop}" fill="none" stroke="${m.color}" stroke-width="1.5" stroke-dasharray="200" stroke-dashoffset="200" style="animation:drawLine 0.5s ${delay} ease forwards"/>`);
-      svgParts.push(`<text x="${lx+48}" y="${y+18}" class="msg-label" style="fill:${m.color};animation:drawLine 0.1s ${delayMs+400}ms forwards;opacity:0;animation-fill-mode:forwards;stroke:none">${m.label}</text>`);
+    if (m.type === 'self') {
+      const lx = cx(m.on), topY = y+4, botY = y+SELF_H-4;
+      const ox = 42;
+      const path = el('path', { d:`M${lx} ${topY} Q${lx+ox} ${topY} ${lx+ox} ${(topY+botY)/2} Q${lx+ox} ${botY} ${lx} ${botY}`, fill:'none', stroke:m.color, 'stroke-width':'1.3', 'marker-end':`url(#sm-${m.color.slice(1)})` });
+      animLine(path, 160, delay);
+      svg.appendChild(path);
+      const txt = el('text', { x: lx+ox+6, y: (topY+botY)/2+4 }, m.label);
+      txt.style.cssText = `font-family:'IBM Plex Mono',monospace;font-size:9px;fill:${m.color};opacity:0;animation:fadeIn 0.2s ${delay+380}ms ease forwards`;
+      svg.appendChild(txt);
       y += SELF_H;
     } else {
       const x1 = cx(m.from), x2 = cx(m.to);
-      const arrowDir = x2 > x1 ? -7 : 7;
-      const isDashed = m.style === 'dashed' || m.ret;
-      const dashAttr = isDashed ? 'stroke-dasharray: 4 3;' : '';
-      svgParts.push(`<line x1="${x1}" y1="${y+12}" x2="${x2 + arrowDir}" y2="${y+12}" stroke="${m.color}" stroke-width="1.5" stroke-dasharray="400" stroke-dashoffset="400" style="${dashAttr}animation:drawLine 0.4s ${delay} ease forwards"/>`);
-      // arrowhead
-      const ax = x2 + arrowDir, ay2 = y+12;
-      const sign = x2 > x1 ? 1 : -1;
-      svgParts.push(`<polygon points="${ax+sign*7},${ay2} ${ax},${ay2-4} ${ax},${ay2+4}" fill="${m.color}" style="opacity:0;animation:drawLine 0.01s ${delayMs+380}ms forwards"/>`);
-      // label
+      const isDashed = m.type === 'ret';
+      const arrowDir = x2 > x1 ? -6 : 6;
+      const lineEl = el('line', { x1, y1: y+14, x2: x2+arrowDir, y2: y+14, stroke: m.color, 'stroke-width':'1.3', 'marker-end':`url(#sm-${m.color.slice(1)})` });
+      if (isDashed) lineEl.setAttribute('stroke-dasharray','4 3');
+      animLine(lineEl, 600, delay);
+      svg.appendChild(lineEl);
+
       const lx = (x1+x2)/2;
-      const ly = m.ret ? y+8 : y+8;
-      svgParts.push(`<text x="${lx}" y="${ly}" text-anchor="middle" class="msg-note" style="fill:${m.color};opacity:0;animation:drawLine 0.01s ${delayMs+200}ms forwards">${m.label}</text>`);
+      const lblY = isDashed ? y+11 : y+11;
+      const txt = el('text', { x: lx, y: lblY, 'text-anchor':'middle' }, m.label);
+      txt.style.cssText = `font-family:'IBM Plex Mono',monospace;font-size:8.5px;fill:${m.color};opacity:0;animation:fadeIn 0.2s ${delay+320}ms ease forwards`;
+      svg.appendChild(txt);
+
       y += MSG_H;
     }
+    delay += 110;
   });
 
   // actor boxes bottom
-  ACTORS.forEach((a, i) => {
-    const x = cx(i) - AW/2;
-    svgParts.push(`<rect x="${x}" y="${y+8}" width="${AW}" height="${AH}" rx="4" style="fill:#181c24;stroke:${a.color};stroke-width:1;opacity:0.6"/>`);
-    svgParts.push(`<text x="${cx(i)}" y="${y+8+AH/2+4}" text-anchor="middle" class="actor-text" style="fill:${a.color};opacity:0.7">${a.label}</text>`);
+  SEQ.actors.forEach((a, i) => {
+    const x = cx(i) - ACT_W/2;
+    const box = el('rect', { x, y: y+6, width: ACT_W, height: ACT_H, rx:'4', fill:'#181c24', stroke: a.color, 'stroke-width':'0.7', opacity:'0.5' });
+    svg.appendChild(box);
+    const txt = el('text', { x: cx(i), y: y+6+ACT_H/2+4, 'text-anchor':'middle' }, a.label);
+    txt.style.cssText = `font-family:'IBM Plex Mono',monospace;font-size:10px;fill:${a.color};opacity:0.5`;
+    svg.appendChild(txt);
   });
 
-  svgParts.push('</svg>');
-
-  document.getElementById('seqWrap').innerHTML = svgParts.join('\n');
+  wrap.appendChild(svg);
 }
+function replaySeq() { seqRendered = false; renderSeq(true); }
 
-// ─── STATE MACHINE ──────────────────────────────────────────────────────────
-const SM_STATES = [
-  // row, col, id, label, color, sublabel
-  [0, 2, 'start',    '●',                     '#4f9eff', ''],
-  [1, 0, 's1',       'Phase 1\nAsk persona',  '#4f9eff', 'Q1.1'],
-  [1, 2, 's1b',      'Phase 1\nAsk name',     '#4f9eff', 'Q1.1B'],
-  [1, 4, 's2',       'Phase 2\nAsk city',     '#22d3a0', 'Q2.1'],
-  [2, 4, 's2g',      'Phase 2\nAsk goal',     '#22d3a0', 'Q2.2'],
-  [2, 2, 's2t',      'Phase 2\nAsk type',     '#22d3a0', 'Q2.3'],
-  [3, 2, 's3',       'Phase 3\nContext merge', '#22d3a0', 'Q3.2'],
-  [3, 0, 's3b',      'Phase 3\nBudget',       '#22d3a0', 'Q3.2b'],
-  [4, 2, 's4',       'Phase 4\nPersona',      '#22d3a0', 'Q4.x'],
-  [5, 2, 'ai',       'AI Search',             '#f59e0b', 'Gemini'],
-  [5, 4, 'nores',    'No results',            '#f43f5e', ''],
-  [6, 2, 'res',      'Show results',          '#a855f7', '+pagination'],
-  [7, 0, 'more',     'Load more',             '#a855f7', 'offset+3'],
-  [7, 2, 'compare',  'Compare link',          '#a855f7', ''],
-  [7, 4, 'expand',   'Expand search',         '#f59e0b', 'relaxed'],
-  [8, 2, 'done',     '■',                     '#6b7280', 'reset or new'],
-];
-
-const SM_COLS = 5;
-const SM_COL_W = 160, SM_ROW_H = 90;
-const SM_BOX_W = 120, SM_BOX_H = 48;
-const SM_OFFSET_X = 60, SM_OFFSET_Y = 30;
-
-function smPos(row, col) {
-  return {
-    x: SM_OFFSET_X + col * SM_COL_W + (SM_COL_W - SM_BOX_W)/2,
-    y: SM_OFFSET_Y + row * SM_ROW_H,
-    cx: SM_OFFSET_X + col * SM_COL_W + SM_COL_W/2,
-    cy: SM_OFFSET_Y + row * SM_ROW_H + SM_BOX_H/2,
-  };
-}
-
-const SM_TRANSITIONS = [
-  // from, to, label, color, curve
-  ['start', 's1',   'new user',         '#4f9eff', 'L'],
-  ['start', 's2',   'returning',        '#22d3a0', 'R'],
-  ['s1',    's1b',  'persona set',      '#4f9eff', 'R'],
-  ['s1b',   's2',   'name captured',    '#4f9eff', 'R'],
-  ['s2',    's2g',  'city given',       '#22d3a0', 'D'],
-  ['s2g',   's2t',  'goal given',       '#22d3a0', 'L'],
-  ['s2t',   's3',   'type given',       '#22d3a0', 'D→'],
-  ['s3',    's3b',  'need budget',      '#22d3a0', 'L'],
-  ['s3b',   's4',   'budget set',       '#22d3a0', 'D→'],
-  ['s3',    's4',   'skip budget',      '#22d3a0', 'D'],
-  ['s4',    'ai',   'phase4 done',      '#f59e0b', 'D'],
-  ['ai',    'res',  'results found',    '#a855f7', 'D'],
-  ['ai',    'nores','zero results',     '#f43f5e', 'R'],
-  ['nores', 'expand','وسّع البحث',      '#f59e0b', 'D'],
-  ['expand','ai',   'retry',            '#f59e0b', 'loop'],
-  ['res',   'more', 'عروض اكثر',        '#a855f7', 'L'],
-  ['res',   'compare','قارن',           '#a855f7', 'R'],
-  ['res',   'expand','expand',          '#f59e0b', 'loop-r'],
-  ['more',  'more', 'next batch',       '#a855f7', 'self'],
-  ['more',  'done', 'end',              '#6b7280', 'D'],
-  ['compare','done','done',             '#6b7280', 'R'],
-  ['res',   'done', 'new search',       '#6b7280', 'D'],
-  ['s2',    's2',   'city unclear',     '#f43f5e', 'self'],
-];
-
-let smBuilt = false;
-function buildSM() {
-  if (smBuilt) return;
-  smBuilt = true;
-  renderSM();
-}
-function replaySM() {
-  smBuilt = false;
-  renderSM();
-}
-
-function renderSM() {
-  const maxRow = Math.max(...SM_STATES.map(s => s[0]));
-  const W = SM_OFFSET_X * 2 + SM_COL_W * SM_COLS;
-  const H = SM_OFFSET_Y * 2 + (maxRow + 1) * SM_ROW_H + 20;
-
-  const stateMap = {};
-  SM_STATES.forEach(s => { stateMap[s[2]] = s; });
-
-  let parts = [`<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">`];
-
-  // defs for arrowheads
-  parts.push(`<defs>`);
-  const tcolors = [...new Set(SM_TRANSITIONS.map(t => t[3]))];
-  tcolors.forEach(c => {
-    const cid = c.replace('#','c');
-    parts.push(`<marker id="arr-${cid}" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="${c}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker>`);
-  });
-  parts.push(`</defs>`);
-
-  // transitions
-  SM_TRANSITIONS.forEach((t, ti) => {
-    const [fid, tid, lbl, color, curve] = t;
-    const fs = stateMap[fid], ts2 = stateMap[tid];
-    if (!fs || !ts2) return;
-    const fp = smPos(fs[0], fs[1]), tp = smPos(ts2[0], ts2[1]);
-    const cid = color.replace('#','c');
-    const delay = 600 + ti * 80 + 'ms';
-    let d, lx, ly;
-
-    if (curve === 'self') {
-      d = `M${fp.cx} ${fp.y} Q${fp.cx+55} ${fp.y-30} ${fp.cx+2} ${fp.y}`;
-      lx = fp.cx + 60; ly = fp.y - 18;
-    } else if (curve === 'loop' || curve === 'loop-r') {
-      const ox = curve === 'loop-r' ? 70 : -70;
-      d = `M${fp.cx} ${fp.y+SM_BOX_H} Q${fp.cx+ox} ${(fp.cy+tp.cy)/2} ${tp.cx} ${tp.y+SM_BOX_H}`;
-      lx = (fp.cx+tp.cx)/2 + ox/2; ly = (fp.cy+tp.cy)/2;
-    } else {
-      // straight-ish
-      let x1 = fp.cx, y1 = fp.cy, x2 = tp.cx, y2 = tp.cy;
-      // adjust to box edge
-      if (y2 > y1 + SM_BOX_H/2) { y1 = fp.y + SM_BOX_H; y2 = tp.y; }
-      else if (y2 < y1 - SM_BOX_H/2) { y1 = fp.y; y2 = tp.y + SM_BOX_H; }
-      else if (x2 > x1) { x1 = fp.x + SM_BOX_W; x2 = tp.x; }
-      else { x1 = fp.x; x2 = tp.x + SM_BOX_W; }
-      d = `M${x1} ${y1} L${x2} ${y2}`;
-      lx = (x1+x2)/2; ly = (y1+y2)/2 - 6;
-    }
-
-    const pathLen = 300;
-    parts.push(`<path d="${d}" fill="none" stroke="${color}" stroke-width="1.2" stroke-dasharray="${pathLen}" stroke-dashoffset="${pathLen}" marker-end="url(#arr-${cid})" style="animation:drawLine 0.5s ${delay} ease forwards"/>`);
-    parts.push(`<text x="${lx}" y="${ly}" text-anchor="middle" style="font-family:'IBM Plex Mono',monospace;font-size:9px;fill:${color};opacity:0;animation:drawLine 0.01s ${parseInt(delay)+450}ms forwards">${lbl}</text>`);
-  });
-
-  // state boxes
-  SM_STATES.forEach((s, si) => {
-    const [row, col, id, rawLabel, color, sub] = s;
-    const p = smPos(row, col);
-    const delay = 200 + si * 60 + 'ms';
-    const lines = rawLabel.split('\n');
-    const isCircle = rawLabel === '●' || rawLabel === '■';
-
-    if (isCircle) {
-      const r = 14;
-      parts.push(`<circle cx="${p.cx}" cy="${p.cy}" r="${r}" fill="${color}" opacity="0" style="animation:drawLine 0.3s ${delay} forwards"/>`);
-      parts.push(`<text x="${p.cx}" y="${p.cy+5}" text-anchor="middle" style="font-size:16px;fill:#fff;opacity:0;animation:drawLine 0.01s ${parseInt(delay)+280}ms forwards">${rawLabel}</text>`);
-    } else {
-      parts.push(`<rect x="${p.x}" y="${p.y}" width="${SM_BOX_W}" height="${SM_BOX_H}" rx="6" fill="#181c24" stroke="${color}" stroke-width="1" opacity="0" style="animation:drawLine 0.3s ${delay} forwards"/>`);
-      if (lines.length === 1) {
-        parts.push(`<text x="${p.cx}" y="${p.cy+4}" text-anchor="middle" style="font-family:'IBM Plex Mono',monospace;font-size:10px;fill:${color};font-weight:500;opacity:0;animation:drawLine 0.01s ${parseInt(delay)+280}ms forwards">${lines[0]}</text>`);
-      } else {
-        parts.push(`<text x="${p.cx}" y="${p.cy-5}" text-anchor="middle" style="font-family:'IBM Plex Mono',monospace;font-size:10px;fill:${color};font-weight:500;opacity:0;animation:drawLine 0.01s ${parseInt(delay)+280}ms forwards">${lines[0]}</text>`);
-        parts.push(`<text x="${p.cx}" y="${p.cy+8}" text-anchor="middle" style="font-family:'IBM Plex Mono',monospace;font-size:10px;fill:${color};opacity:0;animation:drawLine 0.01s ${parseInt(delay)+280}ms forwards">${lines[1]}</text>`);
-      }
-      if (sub) {
-        parts.push(`<text x="${p.cx}" y="${p.y+SM_BOX_H+13}" text-anchor="middle" style="font-family:'IBM Plex Mono',monospace;font-size:8px;fill:#6b7280;opacity:0;animation:drawLine 0.01s ${parseInt(delay)+300}ms forwards">${sub}</text>`);
-      }
-    }
-  });
-
-  parts.push(`</svg>`);
-  document.getElementById('smWrap').innerHTML = parts.join('\n');
-}
-
-// ─── Init ───────────────────────────────────────────────────────────────────
-document.addEventListener('DOMContentLoaded', () => {
-  buildSeq();
-});
+// init
+document.addEventListener('DOMContentLoaded', () => { renderSeq(); });
 </script>
 </body>
 </html>
